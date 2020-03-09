@@ -23,6 +23,11 @@ sportsCenter = {
   "groupsize": "1,000,000+"
 }
 
+highlyQuestionable = {
+  "groupname": "Highly Questionable!",
+  "savepath": "Highly_questionable_2019",
+  "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=2895266",
+  "groupsize": "29,000+"
+}
 
-
-ds.main(PROXY, tournamentChallenge)
+ds.main(PROXY, sportsCenter)

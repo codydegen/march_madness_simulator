@@ -13,8 +13,8 @@ def findMissing(path):
   i = 1
   unused = []
   discontinuity = False
-  while discontinuity = False:
-    if !(os.path.exists(path+"/resultsPgi"+i+".json")):
+  while discontinuity == False:
+    if os.path.exists(path+"/resultsPgi"+str(i)+".json") == False:
       unused.append(i)
       print("missing sheet found: ", i)
       if i-1 in unused:
@@ -98,10 +98,10 @@ def gotoPage(driver, pn):
       minPage = int(tblist[0].text)
       if pn > maxPage:
         tblist[-1].click()
-        time.sleep(5)
+        time.sleep(3)
       elif pn < minPage:
         tblist[0].click()
-        time.sleep(5)
+        time.sleep(3)
       else:
         for i in tblist:
           if pn == int(i.text):
@@ -124,7 +124,7 @@ def main(PROXY, dataset):
   driver = webdriver.Chrome()
   driver.get(dataset["webaddress"]) #Tournament Challenge 100k
   time.sleep(4)
-  unused = findMissing(dataset["path"])
+  unused = findMissing(dataset["savepath"])
   for missingSheet in unused:
     pageNum = gotoPage(driver, missingSheet)
     time.sleep(5)
