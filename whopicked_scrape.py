@@ -28,7 +28,7 @@ espn_2018_men = {
 espn_2018_women = {
   "year": 2018,
   "gender": "women",
-  "url": "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom#"
+  "url": "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom"
 }
 
 def get_who_picked(dataset):
@@ -38,7 +38,7 @@ def get_who_picked(dataset):
   doc = lh.fromstring(page.content)
   #Parse data that are stored between <tr>..</tr> of HTML
   tr_elements = doc.xpath('//tr')
-  print([len(T) for T in tr_elements[:12]])
+  # print([len(T) for T in tr_elements[:12]])
 
   tr_elements = doc.xpath('//tr')
   #Create empty list
@@ -92,7 +92,9 @@ def get_who_picked(dataset):
   df.head()
 
   df.to_csv("data/"+str(dataset["year"])+"_"+dataset["gender"]+"_who_picked.csv", index=False)
+  print("written")
 
 get_who_picked(espn_2018_men)
 get_who_picked(espn_2019_women)
+get_who_picked(espn_2019_men)
 get_who_picked(espn_2018_women)
