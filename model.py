@@ -2,12 +2,30 @@ import random
 import math
 import pandas as pd
 from anytree import Node, RenderTree, NodeMixin
+import os
 
 class Bracket:
   def __init__(self, gender='men', year=2019):
     self.gender = gender
+    self.year = year 
     pass
 
+
+  def create_teams(self):
+    path = "data/"+str(self.year)+"_"+self.gender+"_prepped_data.csv"
+    if os.path.exists(path):
+      print(" found data")
+      team_data = pd.read_csv(path)
+    else:
+      print(" couldn't find data")
+      prep_data(path)
+
+    team_data = pd.read_csv(path)
+    pass
+  
+  
+  def prep_data(self, path):
+    
   # def simulate_game(self, game_id):
   #   # ssimulate the outcome of the game using 538's ELO system ( sans travel adjustment)
   #   # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
@@ -94,44 +112,24 @@ class NodeGame(Game, NodeMixin):
     # update bracket with results of game
     pass
     
-a = Team('a',1,'south',89,0.4)
-b = Team('b',2,'south',87,0.3)
-c = Team('c',3,'south',85,0.2)
-d = Team('d',4,'south',83,0.1)
+# a = Team('a',1,'south',89,0.4)
+# b = Team('b',2,'south',87,0.3)
+# c = Team('c',3,'south',85,0.2)
+# d = Team('d',4,'south',83,0.1)
 
-finals = NodeGame()
-sf1 = NodeGame(a,d,finals)
-sf2 = NodeGame(b,c,finals)
+# finals = NodeGame()
+# sf1 = NodeGame(a,d,finals)
+# sf2 = NodeGame(b,c,finals)
 
-sf1.simulate_game()
-sf2.simulate_game()
-finals.simulate_game()
+# sf1.simulate_game()
+# sf2.simulate_game()
+# finals.simulate_game()
 
-for pre, _, node in RenderTree(finals):
-  treestr = u"%s%s" % (pre, node.round)
-  print(treestr.ljust(8), node.team_one.name, node.team_two.name, node.winner.name)
-# class OtherBracket:
-#   def __init__(self, parameter_list):
-#     pass
+# for pre, _, node in RenderTree(finals):
+#   treestr = u"%s%s" % (pre, node.round)
+#   print(treestr.ljust(8), node.team_one.name, node.team_two.name, node.winner.name)
 
-#   def funcname(self, parameter_list):
-#     pass
-
-# class Pool:
-#   def __init__(self, number_teams):
-#     self.number_teams = number_teams
-#     pass
-
-#   def funcname(self, parameter_list):
-#     pass
-
-# bob = Node("bob")
-# joe = Node("joe", parent=bob)
-# tim = Node("tim", parent=bob)
-# jon = Node("jon", parent=tim)
-# print(joe)
-
-# for pre, fill, node in RenderTree(bob):
-#   print("%s%s" % (pre, node.name))
+bracket = Bracket()
+bracket.create_teams()
 
 
