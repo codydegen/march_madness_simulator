@@ -67,12 +67,14 @@ def get_who_picked(dataset):
     
     #Iterate through each element of the row
     for t in T.iterchildren():
-      data = t.text_content() 
-      picked_percentage = data.split("-")[1]
-      id = data.split("-")[0]
+      data = t.text_content()
+
+      # fix so that data with – in it is not processed incorrectly
+      split_data = data.split("-") 
+      picked_percentage = split_data[-1]
+      id = ''.join(split_data[0:-1])
       seed = re.search(r'\d+', id).group()
       team_name = id[len(seed):]
-      data_name = seed+","+team_name
       if team_name not in col[1][1]:
         # col[i+1]
         col[0][1].append(seed)
@@ -83,15 +85,7 @@ def get_who_picked(dataset):
         index = col[1][1].index(team_name)
         # col[0][1].insert(index, seed)
         col[i+2][1].insert(index, picked_percentage)
-      # if i>0:
-      # #Convert any numerical value to integers
-        # try:
-          # data=int(data)
-        # except:
-          # pass
-      # #Append the data to the empty list of the i'th column
-      # col[i][1].append(data)
-      # #Increment i for the next column
+      #Increment i for the next column
       i+=1
   Dict={title:column for (title,column) in col}
   df=pd.DataFrame(Dict)
