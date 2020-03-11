@@ -122,15 +122,16 @@ def main(PROXY, dataset):
       "autodetect":False
   }
   driver = webdriver.Chrome()
-  driver.get(dataset["webaddress"]) #Tournament Challenge 100k
+  driver.get(dataset["webaddress"])
   time.sleep(4)
-  unused = findMissing(dataset["savepath"])
+  path = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]
+  unused = findMissing(path)
   for missingSheet in unused:
     pageNum = gotoPage(driver, missingSheet)
     time.sleep(5)
     content = driver.page_source
     df = pageExtract(content)
-    df.to_json(dataset["savepath"]+"/resultsPgi"+pageNum+".json", orient='index')
+    df.to_json(path+"/resultsPgi"+pageNum+".json", orient='index')
     print('wrote missing sheet '+pageNum)
 
   i = 0
@@ -139,7 +140,7 @@ def main(PROXY, dataset):
   while b < 1000:
     content = driver.page_source
     df = pageExtract(content)
-    df.to_json(dataset["savepath"]+"/resultsPgi"+pageNum+".json", orient='index')
+    df.to_json(path+"/resultsPgi"+pageNum+".json", orient='index')
     print('wrote sheet '+pageNum)
     pageNum = nextPage(driver)
     time.sleep(2)
