@@ -39,6 +39,7 @@ class Bracket:
     self.year = year 
     self.all_teams = {}
     self.start_bracket = None
+    self.game_pairing = 0
     pass
 
 
@@ -78,35 +79,84 @@ class Bracket:
     pass
   
   def create_bracket(self):
-    finals = NodeGame()
+    # final_four_1 = self.add_semis(final_four_pairings[self.gender][self.year][0])
+    # final_four_2 = self.add_semis(final_four_pairings[self.gender][self.year][1])
+    # finals = NodeGame(region="Finals", children=[final_four_1, final_four_2])
+    finals = NodeGame(region="Finals")
+    
     for ff_pairings in final_four_pairings[self.gender][self.year]:
-      final_four = NodeGame(parent=finals)
-      for region in ff_pairings:
-        elite_eight = NodeGame(round_num=5, region=region)
-        game_pairing = 0
-        for i in range(0,1):
-          sweet_sixteen = NodeGame(region=region, parent=elite_eight)
-          for j in range(0,1):
-            ro32 = NodeGame(region=region, parent=sweet_sixteen)
-            for k in range(0,1):
-              seed_one = str(seed_pairings[game_pairing][0])
-              seed_two = str(seed_pairings[game_pairing][1])
-              team_one = self.all_teams[region][seed_one]
-              team_two = self.all_teams[region][seed_two]
-              # check for play in game
-              if len(team_two) == 2:
-                play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
-                ro64 = NodeGame(region=region, team_one=team_one, children=[play_in], parent=ro32)
-              else:
-                ro64 = NodeGame(region=region, parent=ro32, team_one=team_one, team_two=team_two)
-              game_pairing += 1
-        final_four.add_child(elite_eight)
-      # finals.add_child(final_four)
+      finals.add_child(self.add_semis(ff_pairings))
+
+      # final_four_1 = NodeGame(parent=finals, region="Final Four")
+      # final_four_2 = NodeGame(parent=finals, region="Final Four")
+      # for region in ff_pairings:
+
+        # elite_eight = NodeGame(round_num=5, region=region)
+
+        # self.game_pairing = 0
+        # elite_eight = self.add_team(region=region, round_num=5)
+
+        # for i in range(0,1):
+        #   sweet_sixteen = NodeGame(region=region, parent=elite_eight)
+        #   for j in range(0,1):
+        #     ro32 = NodeGame(region=region, parent=sweet_sixteen)
+        #     for k in range(0,1):
+        #       ro32.add_child(self.add_team(region=region, round_num=2))
+        #       # seed_one = str(seed_pairings[game_pairing][0])
+        #       # seed_two = str(seed_pairings[game_pairing][1])
+        #       # team_one = self.all_teams[region][seed_one]
+        #       # team_two = self.all_teams[region][seed_two]
+        #       # # check for play in game
+        #       # if len(team_two) == 2:
+        #       #   play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
+        #       #   ro64 = NodeGame(region=region, team_one=team_one, children=[play_in], parent=ro32)
+        #       # else:
+        #       #   ro64 = NodeGame(region=region, parent=ro32, team_one=team_one, team_two=team_two)
+        #       # game_pairing += 1
+    #     final_four_1.add_child(elite_eight)
+    #   # finals.add_child(final_four)
     self.start_bracket = finals
     # create top of bracket
-
+    # print(finals)
     pass
+    
   
+  def add_semis(self, pairing):
+    self.game_pairing = 0
+    child_one = self.add_team(region=pairing[0], round_num=5)
+    self.game_pairing = 0
+    child_two = self.add_team(region=pairing[1], round_num=5)
+    semi = NodeGame(region="Final Four", children=[child_one, child_two], round_num=6)
+    return semi
+    # for region in pairing:
+    #   # team_one = self.add_team(region=region, round_num=6)
+    #   # elite_eight = NodeGame(round_num=5, region=region)
+    #   self.game_pairing = 0
+    #   elite_eight = self.add_team(region=region, round_num=5)
+    # finals = NodeGame(region="Finals")
+    # for ff_pairings in final_four_pairings[self.gender][self.year]:
+    #   final_four_1 = NodeGame(parent=finals, region="Final Four")
+    #   final_four_2 = NodeGame(parent=finals, region="Final Four")
+
+  def add_team(self, region, round_num):
+    if round_num == 2:
+      seed_one = str(seed_pairings[self.game_pairing][0])
+      seed_two = str(seed_pairings[self.game_pairing][1])
+      team_one = self.all_teams[region][seed_one]
+      team_two = self.all_teams[region][seed_two]
+      if len(team_two) == 2:
+        play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
+        ro64 = NodeGame(region=region, team_one=team_one, children=[play_in], round_num=round_num)
+      else:
+        ro64 = NodeGame(region=region, team_one=team_one, team_two=team_two, round_num=round_num)
+      self.game_pairing += 1
+      return ro64
+    else:
+      team_one = self.add_team(region=region, round_num=round_num-1)
+      team_two = self.add_team(region=region, round_num=round_num-1)
+      game = NodeGame(region=region, round_num=round_num, children=[team_one, team_two])
+      return game
+    pass
   def prep_data(self, path):
     
     
@@ -125,7 +175,12 @@ class Team:
     pass
 
   def __str__(self):
-    return "Name: "+str(self.name)+"\nRank: "+str(self.rank)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
+    # return "Name: "+str(self.name)+"\nRank: "+str(self.rank)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
+    return str(self.rank)+" "+str(self.name)+ " "+str(self.elo)
+
+  def __repr__(self):
+    # return "Name: "+str(self.name)+"\nRank: "+str(self.rank)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
+    return str(self.rank)+" "+str(self.name)+ " "+str(self.elo)
 
   def funcname(self, parameter_list):
     pass
@@ -156,11 +211,10 @@ class NodeGame(Game, NodeMixin):
       self.region = region
 
   def __str__(self):
-    return "Round "+str(self.round)+" matchup in the "+str(self.region)+" Region between "+str(self.team_one)+" and "+str(self.team_two)+"."
+    return "R"+str(self.round_num)+" in the "+str(self.region)+" Region between "+str(self.team_one)+" and "+str(self.team_two)+"."
 
   def __repr__(self):
-    return "Round "+str(self.round)+" matchup in the "+str(self.region)+" Region between "+str(self.team_one)+" and "+str(self.team_two)+"."
-
+    return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
 
   def simulate_game(self):
     # ssimulate the outcome of the game using 538's ELO system ( sans travel adjustment)
@@ -218,7 +272,8 @@ bracket = Bracket()
 bracket.create_teams()
 bracket.create_bracket()
 # print(bracket)
-print(bracket.start_bracket.descendants)
+print(RenderTree(bracket.start_bracket))
+# print(bracket.start_bracket.descendants)
 
 # for pre, _, node in RenderTree(bracket.start_bracket):
 #   treestr = u"%s%s" % (pre, node.round_num)
