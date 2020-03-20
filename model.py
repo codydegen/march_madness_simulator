@@ -1,7 +1,8 @@
 import random
 import math
 import pandas as pd
-from anytree import Node, RenderTree, NodeMixin
+from anytree import Node, RenderTree, NodeMixin, AsciiStyle
+from anytree.exporter import DotExporter
 import os
 
 final_four_pairings = {
@@ -72,71 +73,24 @@ class Bracket:
         self.all_teams[team_region][team_seed] = [team]
       else:
         self.all_teams[team_region][team_seed].append(team)
-
-      # if team_seed not in teams[team.region]:
-      # print(self.all_teams[-1])
-    
     pass
   
   def create_bracket(self):
-    # final_four_1 = self.add_semis(final_four_pairings[self.gender][self.year][0])
-    # final_four_2 = self.add_semis(final_four_pairings[self.gender][self.year][1])
-    # finals = NodeGame(region="Finals", children=[final_four_1, final_four_2])
     finals = NodeGame(region="Finals")
-    
     for ff_pairings in final_four_pairings[self.gender][self.year]:
       finals.add_child(self.add_semis(ff_pairings))
-
-      # final_four_1 = NodeGame(parent=finals, region="Final Four")
-      # final_four_2 = NodeGame(parent=finals, region="Final Four")
-      # for region in ff_pairings:
-
-        # elite_eight = NodeGame(round_num=5, region=region)
-
-        # self.game_pairing = 0
-        # elite_eight = self.add_team(region=region, round_num=5)
-
-        # for i in range(0,1):
-        #   sweet_sixteen = NodeGame(region=region, parent=elite_eight)
-        #   for j in range(0,1):
-        #     ro32 = NodeGame(region=region, parent=sweet_sixteen)
-        #     for k in range(0,1):
-        #       ro32.add_child(self.add_team(region=region, round_num=2))
-        #       # seed_one = str(seed_pairings[game_pairing][0])
-        #       # seed_two = str(seed_pairings[game_pairing][1])
-        #       # team_one = self.all_teams[region][seed_one]
-        #       # team_two = self.all_teams[region][seed_two]
-        #       # # check for play in game
-        #       # if len(team_two) == 2:
-        #       #   play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
-        #       #   ro64 = NodeGame(region=region, team_one=team_one, children=[play_in], parent=ro32)
-        #       # else:
-        #       #   ro64 = NodeGame(region=region, parent=ro32, team_one=team_one, team_two=team_two)
-        #       # game_pairing += 1
-    #     final_four_1.add_child(elite_eight)
-    #   # finals.add_child(final_four)
     self.start_bracket = finals
-    # create top of bracket
-    # print(finals)
     pass
     
   
   def add_semis(self, pairing):
+    # create top of bracket
     self.game_pairing = 0
     child_one = self.add_team(region=pairing[0], round_num=5)
     self.game_pairing = 0
     child_two = self.add_team(region=pairing[1], round_num=5)
     semi = NodeGame(region="Final Four", children=[child_one, child_two], round_num=6)
     return semi
-    # for region in pairing:
-    #   # team_one = self.add_team(region=region, round_num=6)
-    #   # elite_eight = NodeGame(round_num=5, region=region)
-    #   self.game_pairing = 0
-    #   elite_eight = self.add_team(region=region, round_num=5)
-    # finals = NodeGame(region="Finals")
-    # for ff_pairings in final_four_pairings[self.gender][self.year]:
-    #   final_four_1 = NodeGame(parent=finals, region="Final Four")
-    #   final_four_2 = NodeGame(parent=finals, region="Final Four")
 
   def add_team(self, region, round_num):
     if round_num == 2:
@@ -146,9 +100,9 @@ class Bracket:
       team_two = self.all_teams[region][seed_two]
       if len(team_two) == 2:
         play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
-        ro64 = NodeGame(region=region, team_one=team_one, children=[play_in], round_num=round_num)
+        ro64 = NodeGame(region=region, team_one=team_one[0], children=play_in, round_num=round_num)
       else:
-        ro64 = NodeGame(region=region, team_one=team_one, team_two=team_two, round_num=round_num)
+        ro64 = NodeGame(region=region, team_one=team_one[0], team_two=team_two[0], round_num=round_num)
       self.game_pairing += 1
       return ro64
     else:
@@ -161,6 +115,22 @@ class Bracket:
     
     
     return None
+    pass
+
+  
+  def simulate_bracket(self):
+    self.simulate_bracket_recursion(self.start_bracket)
+    pass
+  
+  def simulate_bracket_recursion(self, node):
+    # print( "quotes similar in brackets" )
+    for child in node.children:
+      if hasattr(child.team_one, 'name'):
+        self.simulate_bracket_recursion(child)
+      if hasattr(child.team_two, 'name'):
+        self.simulate_bracket_recursion(child)
+      # if child.team_one[0].name != "tbd" and child.team_two[0].name != "tbd":
+      child.simulate_game()
     pass
 
 
@@ -203,10 +173,10 @@ class NodeGame(Game, NodeMixin):
       self.round_num = parent.round_num - 1
     else:
       self.round_num = round_num
-    if winner:
-      self.winner = winner
+    # if winner:
+    self.winner = winner
     if children:
-      self.children = children
+      self.add_child(children)
     if region:
       self.region = region
 
@@ -214,14 +184,17 @@ class NodeGame(Game, NodeMixin):
     return "R"+str(self.round_num)+" in the "+str(self.region)+" Region between "+str(self.team_one)+" and "+str(self.team_two)+"."
 
   def __repr__(self):
-    return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
+    if self.winner:
+      return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+".  Winner is "+str(self.winner)
+    else:
+      return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
 
   def simulate_game(self):
     # ssimulate the outcome of the game using 538's ELO system ( sans travel adjustment)
     # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
     team_one_chance = 1.0/(1.0 + pow(10,(-(self.team_one.elo-self.team_two.elo))*30.464/400))
     
-    print(self.team_one.name+"'s chance of winning = "+str(math.trunc(team_one_chance*100))+"%")
+    print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
       self.winner = self.team_one
@@ -245,38 +218,32 @@ class NodeGame(Game, NodeMixin):
 
   
   def add_child(self, child):
-    if len(self.children) == 0:
-      self.children = [child]
+    if type(child) is list:
+      for i in child:
+        i.parent = self
     else:
-      self.children = [self.children[0], child]
+      print('s')
+      child.parent = self
+    # if len(self.children) == 0:
+    #   self.children = [child]
+    # else:
+    #   self.children = [self.children[0], child]
     pass
     
-# a = Team('a',1,'south',89,0.4)
-# b = Team('b',2,'south',87,0.3)
-# c = Team('c',3,'south',85,0.2)
-# d = Team('d',4,'south',83,0.1)
-
-# finals = NodeGame()
-# sf1 = NodeGame(a,d,finals)
-# sf2 = NodeGame(b,c,finals)
-
-# sf1.simulate_game()
-# sf2.simulate_game()
-# finals.simulate_game()
-
-# for pre, _, node in RenderTree(finals):
-#   treestr = u"%s%s" % (pre, node.round)
-#   print(treestr.ljust(8), node.team_one.name, node.team_two.name, node.winner.name)
-
 bracket = Bracket()
 bracket.create_teams()
 bracket.create_bracket()
-# print(bracket)
-print(RenderTree(bracket.start_bracket))
-# print(bracket.start_bracket.descendants)
+# print(RenderTree(bracket.start_bracket).by_attr(NodeGame))
+print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
+# DotExporter(bracket.start_bracket).to_picture('test.png')
+bracket.simulate_bracket()
+print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
 
-# for pre, _, node in RenderTree(bracket.start_bracket):
-#   treestr = u"%s%s" % (pre, node.round_num)
-#   print(treestr.ljust(8), node.team_one.name, node.team_two.name)
+# a = NodeGame()
+# b = NodeGame(parent=a)
+# c = NodeGame(team_one="bob")
+# c.parent = b
+
+# print(c)
 
 
