@@ -35,13 +35,15 @@ seed_pairings = [[1,16],
                  [2,15]]
 
 class Bracket:
-  def __init__(self, gender='mens', year=2019):
+  def __init__(self, gender='mens', year=2019, number_runs=1):
     self.gender = gender
     self.year = year 
     self.all_teams = {}
     self.start_bracket = None
     self.game_pairing = 0
+    self.number_runs = number_runs
     pass
+
 
 
   def create_teams(self):
@@ -59,7 +61,15 @@ class Bracket:
     earliest_date = gender_specific.forecast_date[-1:].values[-1]
     df = gender_specific[gender_specific.forecast_date == earliest_date]
     for ind in df.index:
-      picks = [df["R64_picked"][ind], df["R32_picked"][ind], df["S16_picked"][ind], df["E8_picked"][ind], df["F4_picked"][ind], df["NCG_picked"][ind]]
+      # picks = [df["R64_picked"][ind], df["R32_picked"][ind], df["S16_picked"][ind], df["E8_picked"][ind], df["F4_picked"][ind], df["NCG_picked"][ind]]
+      picks = {
+        2:df["R64_picked"][ind], 
+        3:df["R32_picked"][ind], 
+        4:df["S16_picked"][ind], 
+        5:df["E8_picked"][ind], 
+        6:df["F4_picked"][ind], 
+        7:df["NCG_picked"][ind], 
+      }
       team_name = df["team_name"][ind]
       team_seed = df["team_seed"][ind]
       if len(team_seed) > 2:
@@ -120,6 +130,7 @@ class Bracket:
   
   def simulate_bracket(self):
     self.simulate_bracket_recursion(self.start_bracket)
+    self.start_bracket.root.simulate_game()
     pass
   
   def simulate_bracket_recursion(self, node):
@@ -142,6 +153,16 @@ class Team:
     self.region = region
     self.elo = elo
     self.picked_frequency = picked_frequency
+    self.wins = {
+      # round number is key, value is number of wins
+      1:0, 
+      2:0, 
+      3:0, 
+      4:0, 
+      5:0, 
+      6:0, 
+      7:0, 
+    }
     pass
 
   def __str__(self):
@@ -190,11 +211,13 @@ class NodeGame(Game, NodeMixin):
       return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
 
   def simulate_game(self):
+    if self.winner:
+      print(" this matchup between "+str(self.team_one)+" and  "+str(self.team_two)+" already has a winner: "+str(self.winner))
     # ssimulate the outcome of the game using 538's ELO system ( sans travel adjustment)
     # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
     team_one_chance = 1.0/(1.0 + pow(10,(-(self.team_one.elo-self.team_two.elo))*30.464/400))
     
-    print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
+    # print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
       self.winner = self.team_one
@@ -206,6 +229,7 @@ class NodeGame(Game, NodeMixin):
       self.team_two.update_elo(self.team_one, True)
     pass
     self.update_bracket(self.winner)
+    self.winner.wins[self.round_num] += 1
 
   def update_bracket(self, winning_team):
     if self.parent:
