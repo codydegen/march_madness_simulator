@@ -130,18 +130,16 @@ class Bracket:
   
   def simulate_bracket(self):
     self.simulate_bracket_recursion(self.start_bracket)
-    self.start_bracket.root.simulate_game()
     pass
   
   def simulate_bracket_recursion(self, node):
-    # print( "quotes similar in brackets" )
+    # sorted DFS post order
     for child in node.children:
-      if hasattr(child.team_one, 'name'):
+      # go through until there are no children
+      if not hasattr(child.winner, 'name'):
         self.simulate_bracket_recursion(child)
-      if hasattr(child.team_two, 'name'):
-        self.simulate_bracket_recursion(child)
-      # if child.team_one[0].name != "tbd" and child.team_two[0].name != "tbd":
-      child.simulate_game()
+    # then sim game
+    node.simulate_game()
     pass
 
 
@@ -217,7 +215,7 @@ class NodeGame(Game, NodeMixin):
     # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
     team_one_chance = 1.0/(1.0 + pow(10,(-(self.team_one.elo-self.team_two.elo))*30.464/400))
     
-    # print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
+    print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
       self.winner = self.team_one
