@@ -27,6 +27,40 @@ final_four_pairings = {
   }
 }
 
+# different scoring systems for different brackets so expected points can be calculated
+scoring_systems = {
+  "ESPN" : {
+    1 : 0,
+    2 : 10,
+    3 : 20,
+    4 : 40,
+    5 : 80,
+    6 : 160,
+    7 : 320,
+  },
+
+  "wins_only" : {
+    1 : 0,
+    2 : 1,
+    3 : 1,
+    4 : 1,
+    5 : 1,
+    6 : 1,
+    7 : 1,
+  },
+
+  "degen_bracket" : {
+    1 : 0,
+    2 : 2,
+    3 : 3,
+    4 : 5,
+    5 : 8,
+    6 : 13,
+    7 : 21,
+  }
+}
+
+
 # seed pairings used to build the initial bracket
 seed_pairings = [[1,16],
                  [8,9],
@@ -38,7 +72,7 @@ seed_pairings = [[1,16],
                  [2,15]]
 
 class Bracket:
-  def __init__(self, gender='mens', year=2019, number_simulations=1):
+  def __init__(self, gender='mens', year=2019, number_simulations=1, scoring_system=scoring_systems["ESPN"]):
     self.gender = gender
     self.year = year 
     self.all_teams = {}
@@ -47,7 +81,20 @@ class Bracket:
     self.game_pairing = 0
     self.number_simulations = number_simulations
     self.completed_simulations = 0
+    self.scoring_system = scoring_system
     pass
+
+  def team_look_up(self, team):
+    teams = self.all_teams[team.region][team.seed]
+    if len(teams) == 1:
+      return teams[0]
+    else:
+      if teams[0].name == team.name:
+        return teams[0]
+      elif teams[1].name == team.name:
+        return teams[1]
+      else:
+        assert False, "couldn't find team"
 
   def reset_bracket(self):
     self.running_bracket=copy.deepcopy(self.start_bracket)
@@ -56,32 +103,31 @@ class Bracket:
   def batch_simulate(self):
     for i in range(0, self.number_simulations-1):
       self.simulate_bracket()
-      self.update_winners()
+      # self.update_winners()
       self.reset_bracket()
       
       self.completed_simulations += 1
       if self.completed_simulations%100 == 0:
         print("simulation number "+str(i+1)+" completed.")
 
-  def update_winners(self):
-    # for region in all_teams:
-    #   for seed in region:
-    #     for team in seed:
-    # for game in self.running_bracket.descendants:
-    #   winner = game.winner
-    #   teams = self.all_teams[winner.region][winner.seed]
-    #   if len(teams)==1:
-    #     team = teams[0]
-    #   else:
-    #     if teams[0].name == winner.name:
-    #       team = teams[0]
-    #     else:
-    #       team = teams[1]
-    #   for round in winner.wins:
-    #     if winner.wins[round] > 0:
-    #       team.wins[round] += 1
-    #       pass
-      pass
+  def calculate_expected_points(self):
+    for region in self.all_teams:
+      for seed in self.all_teams[region]:
+        for team in self.all_teams[region][seed]:
+          total_expected_points = 0
+          for ep in team.expected_points:
+            round_expected_points = float(team.wins[ep]) / float(self.number_simulations) * float(self.scoring_system[ep])
+            team.expected_points[ep] = round_expected_points
+            total_expected_points += round_expected_points
+          team.total_expected_points = total_expected_points
+          print(team.name+" expected points: "+str(team.total_expected_points))
+    pass
+
+  def output_most_valuable_team(self):
+    self.calculate_expected_points()
+    most_valuable_bracket = copy.deepcopy(self.start_bracket)
+    self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
+    print(RenderTree(most_valuable_bracket, style=AsciiStyle()))
 
   def create_teams(self):
     path = "data/"+str(self.year)+"_all_prepped_data.csv"
@@ -161,12 +207,11 @@ class Bracket:
       game = NodeGame(region=region, round_num=round_num, children=[team_one, team_two])
       return game
     pass
+
   def prep_data(self, path):
     # placeholder function for now
     
     return None
-
-
   
   def simulate_bracket(self):
     self.simulate_bracket_recursion(self.running_bracket)
@@ -183,6 +228,20 @@ class Bracket:
     pass
 
 
+# my intuition is that I should be able to to both this and the previous functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
+  def output_most_valuable_teams_for_full_bracket(self, bracket):
+    self.most_valuable_teams_recursion(bracket)
+    pass
+  
+  def most_valuable_teams_recursion(self, node):
+    # sorted DFS post order
+    for child in node.children:
+      # go through until there are no children
+      if not hasattr(child.winner, 'name'):
+        self.most_valuable_teams_recursion(child)
+    # then sim game
+    node.pick_more_valuable_team()
+    pass
 
 class Team:
   def __init__(self, name, seed, region, elo, picked_frequency):
@@ -191,6 +250,7 @@ class Team:
     self.region = region
     self.elo = elo
     self.picked_frequency = picked_frequency
+
     self.wins = {
       # round number is key, value is number of wins
       1:0, 
@@ -201,10 +261,21 @@ class Team:
       6:0, 
       7:0, 
     }
+    self.expected_points = {
+      # round number is key, value is number of expected points
+      1:0, 
+      2:0, 
+      3:0, 
+      4:0, 
+      5:0, 
+      6:0, 
+      7:0, 
+    }
+    self.total_expected_points = 0
     pass
 
   def __str__(self):
-    return str(self.seed)+" "+str(self.name)+ " "+str(self.elo)
+    return str(self.seed)+" "+str(self.name)+ " "+str(self.elo)+" EP: "+str(self.total_expected_points)
 
   def __repr__(self):
     # return "Name: "+str(self.name)+"\nseed: "+str(self.seed)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
@@ -306,9 +377,24 @@ class NodeGame(Game, NodeMixin):
     else:
       child.parent = self
     pass
+
+  def pick_more_valuable_team(self):
+    # between two teams in a matchup, pick the team with more expected points. Used to visualize results
+    # self.team_one.total_expected_points = bracket.team_look_up(self.team_one).total_expected_points
+    # self.team_two.total_expected_points = bracket.team_look_up(self.team_two).total_expected_points
+    if self.team_one.total_expected_points > self.team_two.total_expected_points:
+      self.update_bracket(self.team_one)
+    elif self.team_one.total_expected_points < self.team_two.total_expected_points:
+      self.update_bracket(self.team_two)
+    else:
+      print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same expected points.")
+      if random.random() < 0.5:
+        self.update_bracket(self.team_one)
+      else:
+        self.update_bracket(self.team_two)
     
 t=time.time()
-bracket = Bracket(number_simulations = 1000)
+bracket = Bracket(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
 bracket.create_teams()
 bracket.create_bracket()
 bracket.batch_simulate()
@@ -316,5 +402,5 @@ t = time.time() - t
 print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
 print(t)
 print(RenderTree(bracket.running_bracket, style=AsciiStyle()))
-bracket.reset_bracket()
+bracket.output_most_valuable_team()
 
