@@ -25,6 +25,7 @@ final_four_pairings = {
   }
 }
 
+# seed pairings used to build the initial bracket
 seed_pairings = [[1,16],
                  [8,9],
                  [5,12],
@@ -42,6 +43,7 @@ class Bracket:
     self.start_bracket = None
     self.game_pairing = 0
     self.number_runs = number_runs
+    self.completed_simulations = 0
     pass
 
 
@@ -54,11 +56,13 @@ class Bracket:
       
     else:
       print(" couldn't find data")
+      # TBD, hook up data scraping to this
       a = prep_data(path)
 
     team_data = pd.read_csv(path)
     gender_specific = team_data[team_data.gender == self.gender]
     earliest_date = gender_specific.forecast_date[-1:].values[-1]
+    # data subset is the teams from the earliest date shown. This is the data from all of the teams are still in the tournament
     df = gender_specific[gender_specific.forecast_date == earliest_date]
     for ind in df.index:
       # picks = [df["R64_picked"][ind], df["R32_picked"][ind], df["S16_picked"][ind], df["E8_picked"][ind], df["F4_picked"][ind], df["NCG_picked"][ind]]
@@ -122,10 +126,10 @@ class Bracket:
       return game
     pass
   def prep_data(self, path):
-    
+    # placeholder function for now
     
     return None
-    pass
+
 
   
   def simulate_bracket(self):
@@ -164,22 +168,19 @@ class Team:
     pass
 
   def __str__(self):
-    # return "Name: "+str(self.name)+"\nRank: "+str(self.rank)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
     return str(self.rank)+" "+str(self.name)+ " "+str(self.elo)
 
   def __repr__(self):
     # return "Name: "+str(self.name)+"\nRank: "+str(self.rank)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
     return str(self.rank)+" "+str(self.name)+ " "+str(self.elo)
 
-  def funcname(self, parameter_list):
-    pass
-
   def update_elo(self, team_two, winner):
-    # update elo for future rounds based on game outcome
+    # update elo for future rounds based on game outcome. not sure how to do this for now so no update to elo will occur
     pass
 
 
 class Game:
+  # placeholder base class used as anytree implementation requires
   pass
 
 class NodeGame(Game, NodeMixin):
@@ -192,7 +193,6 @@ class NodeGame(Game, NodeMixin):
       self.round_num = parent.round_num - 1
     else:
       self.round_num = round_num
-    # if winner:
     self.winner = winner
     if children:
       self.add_child(children)
@@ -209,12 +209,13 @@ class NodeGame(Game, NodeMixin):
       return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
 
   def simulate_game(self):
-    if self.winner:
-      print(" this matchup between "+str(self.team_one)+" and  "+str(self.team_two)+" already has a winner: "+str(self.winner))
-    # ssimulate the outcome of the game using 538's ELO system ( sans travel adjustment)
+    # simulate the outcome of the game using 538's ELO system ( sans travel adjustment)
     # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
+
+    # make sure the game doesn't already have a winner
+    assert not self.winner, "game between "+str(self.team_one)+" and  "+str(self.team_two)+" already has been played."
+
     team_one_chance = 1.0/(1.0 + pow(10,(-(self.team_one.elo-self.team_two.elo))*30.464/400))
-    
     print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
@@ -222,20 +223,24 @@ class NodeGame(Game, NodeMixin):
       self.team_one.update_elo(self.team_two, True)
       self.team_two.update_elo(self.team_one, False)
     else:
+      # team two wins
       self.winner = self.team_two
       self.team_one.update_elo(self.team_two, False)
       self.team_two.update_elo(self.team_one, True)
-    pass
+    # pass
     self.update_bracket(self.winner)
     self.winner.wins[self.round_num] += 1
 
   def update_bracket(self, winning_team):
+    # update bracket with results of game
     if self.parent:
       if self.parent.team_one.name == "tbd":
         self.parent.team_one = winning_team 
+      elif self.parent.team_two.name == "tbd":
+        self.parent.team_two = winning_team
       else:
-        self.parent.team_two = winning_team 
-    # update bracket with results of game
+        raise Exception("both teams in parent exist: "+self.parent.team_one+" "+self.parent.team_two)
+
     pass
 
   
@@ -244,28 +249,13 @@ class NodeGame(Game, NodeMixin):
       for i in child:
         i.parent = self
     else:
-      print('s')
       child.parent = self
-    # if len(self.children) == 0:
-    #   self.children = [child]
-    # else:
-    #   self.children = [self.children[0], child]
     pass
     
 bracket = Bracket()
 bracket.create_teams()
 bracket.create_bracket()
-# print(RenderTree(bracket.start_bracket).by_attr(NodeGame))
 print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
-# DotExporter(bracket.start_bracket).to_picture('test.png')
 bracket.simulate_bracket()
 print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
-
-# a = NodeGame()
-# b = NodeGame(parent=a)
-# c = NodeGame(team_one="bob")
-# c.parent = b
-
-# print(c)
-
 
