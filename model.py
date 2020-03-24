@@ -127,7 +127,7 @@ class Bracket:
     self.calculate_expected_points()
     most_valuable_bracket = copy.deepcopy(self.start_bracket)
     self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
-    print(RenderTree(most_valuable_bracket, style=AsciiStyle()))
+    return most_valuable_bracket
 
   def create_teams(self):
     path = "data/"+str(self.year)+"_all_prepped_data.csv"
@@ -305,6 +305,7 @@ class NodeGame(Game, NodeMixin):
       self.add_child(children)
     if region:
       self.region = region
+    self.name = self.__str__()
 
   def __str__(self):
     return "R"+str(self.round_num)+" in the "+str(self.region)+" Region between "+str(self.team_one)+" and "+str(self.team_two)+"."
@@ -394,7 +395,7 @@ class NodeGame(Game, NodeMixin):
         self.update_bracket(self.team_two)
     
 t=time.time()
-bracket = Bracket(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
+bracket = Bracket(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 bracket.create_teams()
 bracket.create_bracket()
 bracket.batch_simulate()
@@ -402,5 +403,7 @@ t = time.time() - t
 print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
 print(t)
 print(RenderTree(bracket.running_bracket, style=AsciiStyle()))
-bracket.output_most_valuable_team()
+a = bracket.output_most_valuable_team()
+DotExporter(a).to_dotfile("mvb.dot")
+DotExporter(bracket.start_bracket).to_dotfile("pudo.png")
 
