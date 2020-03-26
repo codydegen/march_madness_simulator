@@ -75,18 +75,60 @@ seed_pairings = [[1,16],
                  [7,10],
                  [2,15]]
 
-class Bracket:
+class Model:
   def __init__(self, gender='mens', year=2019, number_simulations=1, scoring_system=scoring_systems["ESPN"]):
     self.gender = gender
     self.year = year 
-    self.all_teams = {}
-    self.start_bracket = None
-    self.running_bracket = None
+    self.all_teams = self.create_teams()
+    self.start_bracket = Bracket(model=self)
+    self.sim_bracket = copy.deepcopy(self.start_bracket)
     self.game_pairing = 0
     self.number_simulations = number_simulations
     self.completed_simulations = 0
     self.scoring_system = scoring_system
     pass
+
+  def create_teams(self):
+    path = "data/"+str(self.year)+"_all_prepped_data.csv"
+    all_teams = {}
+    if os.path.exists(path):
+      print(" found data")
+      
+    else:
+      print(" couldn't find data")
+      # TBD, hook up data scraping to this
+      a = self.prep_data(path)
+
+    team_data = pd.read_csv(path)
+    gender_specific = team_data[team_data.gender == self.gender]
+    earliest_date = gender_specific.forecast_date[-1:].values[-1]
+    # data subset is the teams from the earliest date shown. This is the data from all of the teams are still in the tournament
+    df = gender_specific[gender_specific.forecast_date == earliest_date]
+    for ind in df.index:
+      picks = {
+        2:df["R64_picked"][ind], 
+        3:df["R32_picked"][ind], 
+        4:df["S16_picked"][ind], 
+        5:df["E8_picked"][ind], 
+        6:df["F4_picked"][ind], 
+        7:df["NCG_picked"][ind], 
+      }
+      team_name = df["team_name"][ind]
+      team_seed = df["team_seed"][ind]
+      # team seeds in the imported file have an a or B suffix for playin games, this strips that 
+      if len(team_seed) > 2:
+        team_seed = team_seed[0:2]
+      team_region = df["team_region"][ind]
+      team_rating = df["team_rating"][ind]
+      team = Team(team_name, team_seed, team_region, team_rating, picks)
+      if team_region not in all_teams:
+        all_teams[team_region] = {}
+      if team_seed not in all_teams[team_region]:
+        all_teams[team_region][team_seed] = [team]
+      else:
+        all_teams[team_region][team_seed].append(team)
+    return all_teams
+    
 
   def team_look_up(self, team):
     teams = self.all_teams[team.region][team.seed]
@@ -101,9 +143,10 @@ class Bracket:
         assert False, "couldn't find team"
 
   def reset_bracket(self):
-    self.running_bracket=copy.deepcopy(self.start_bracket)
+    self.sim_bracket=copy.deepcopy(self.start_bracket)
     pass
 
+# simulation methods
   def batch_simulate(self):
     for i in range(0, self.number_simulations-1):
       self.simulate_bracket()
@@ -133,84 +176,9 @@ class Bracket:
     self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
     return most_valuable_bracket
 
-  def create_teams(self):
-    path = "data/"+str(self.year)+"_all_prepped_data.csv"
 
-    if os.path.exists(path):
-      print(" found data")
-      
-    else:
-      print(" couldn't find data")
-      # TBD, hook up data scraping to this
-      a = self.prep_data(path)
-
-    team_data = pd.read_csv(path)
-    gender_specific = team_data[team_data.gender == self.gender]
-    earliest_date = gender_specific.forecast_date[-1:].values[-1]
-    # data subset is the teams from the earliest date shown. This is the data from all of the teams are still in the tournament
-    df = gender_specific[gender_specific.forecast_date == earliest_date]
-    for ind in df.index:
-      # picks = [df["R64_picked"][ind], df["R32_picked"][ind], df["S16_picked"][ind], df["E8_picked"][ind], df["F4_picked"][ind], df["NCG_picked"][ind]]
-      picks = {
-        2:df["R64_picked"][ind], 
-        3:df["R32_picked"][ind], 
-        4:df["S16_picked"][ind], 
-        5:df["E8_picked"][ind], 
-        6:df["F4_picked"][ind], 
-        7:df["NCG_picked"][ind], 
-      }
-      team_name = df["team_name"][ind]
-      team_seed = df["team_seed"][ind]
-      if len(team_seed) > 2:
-        team_seed = team_seed[0:2]
-      team_region = df["team_region"][ind]
-      team_rating = df["team_rating"][ind]
-      team = Team(team_name, team_seed, team_region, team_rating, picks)
-      if team_region not in self.all_teams:
-        self.all_teams[team_region] = {}
-      if team_seed not in self.all_teams[team_region]:
-        self.all_teams[team_region][team_seed] = [team]
-      else:
-        self.all_teams[team_region][team_seed].append(team)
-    pass
   
-  def create_bracket(self):
-    finals = NodeGame(region="Finals")
-    for ff_pairings in final_four_pairings[self.gender][self.year]:
-      finals.add_child(self.add_semis(ff_pairings))
-    self.start_bracket = finals
-    self.running_bracket = copy.deepcopy(self.start_bracket)
-    pass
-    
   
-  def add_semis(self, pairing):
-    # create top of bracket
-    self.game_pairing = 0
-    child_one = self.add_team(region=pairing[0], round_num=5)
-    self.game_pairing = 0
-    child_two = self.add_team(region=pairing[1], round_num=5)
-    semi = NodeGame(region="Final Four", children=[child_one, child_two], round_num=6)
-    return semi
-
-  def add_team(self, region, round_num):
-    if round_num == 2:
-      seed_one = str(seed_pairings[self.game_pairing][0])
-      seed_two = str(seed_pairings[self.game_pairing][1])
-      team_one = self.all_teams[region][seed_one]
-      team_two = self.all_teams[region][seed_two]
-      if len(team_two) == 2:
-        play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
-        ro64 = NodeGame(region=region, team_one=team_one[0], children=play_in, round_num=round_num)
-      else:
-        ro64 = NodeGame(region=region, team_one=team_one[0], team_two=team_two[0], round_num=round_num)
-      self.game_pairing += 1
-      return ro64
-    else:
-      team_one = self.add_team(region=region, round_num=round_num-1)
-      team_two = self.add_team(region=region, round_num=round_num-1)
-      game = NodeGame(region=region, round_num=round_num, children=[team_one, team_two])
-      return game
-    pass
 
   def prep_data(self, path):
     # placeholder function for now
@@ -218,7 +186,7 @@ class Bracket:
     return None
   
   def simulate_bracket(self):
-    self.simulate_bracket_recursion(self.running_bracket)
+    self.simulate_bracket_recursion(self.sim_bracket)
     pass
   
   def simulate_bracket_recursion(self, node):
@@ -231,8 +199,7 @@ class Bracket:
     node.simulate_game()
     pass
 
-
-# my intuition is that I should be able to to both this and the previous functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
+  # my intuition is that I should be able to to both this and the previous functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
   def output_most_valuable_teams_for_full_bracket(self, bracket):
     self.most_valuable_teams_recursion(bracket)
     pass
@@ -249,6 +216,62 @@ class Bracket:
 
   def export_teams_to_json(self):
     return json.dumps(self.all_teams, default=lambda o: o.toJSON(), sort_keys=True, ensure_ascii=False)
+
+
+class Bracket:
+  def __init__(self, model, method="empty", source=None):
+    self.game_pairing = 0
+    self.model = model
+    if method == "empty":
+      self.bracket = self.create_bracket()
+    elif method == "json":
+      self.bracket = self.import_bracket_json(source)
+    elif method == "url":
+      self.bracket = self.import_bracket_url(source)
+    else:
+      raise Exception("unknown method designated for bracket creation, creating empty bracket")
+      self.bracket = create_bracket()
+    pass
+
+  def create_bracket(self):
+    finals = NodeGame(region="Finals")
+    for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
+      finals.add_child(self.add_semis(ff_pairings))
+    return finals
+    # self.start_bracket = finals
+    # self.sim_bracket = copy.deepcopy(self.start_bracket)
+    pass
+    
+  
+  def add_semis(self, pairing):
+    # create top of bracket
+    self.game_pairing = 0
+    child_one = self.add_team(region=pairing[0], round_num=5)
+    self.game_pairing = 0
+    child_two = self.add_team(region=pairing[1], round_num=5)
+    semi = NodeGame(region="Final Four", children=[child_one, child_two], round_num=6)
+    return semi
+
+  def add_team(self, region, round_num):
+    if round_num == 2:
+      seed_one = str(seed_pairings[self.game_pairing][0])
+      seed_two = str(seed_pairings[self.game_pairing][1])
+      team_one = self.model.all_teams[region][seed_one]
+      team_two = self.model.all_teams[region][seed_two]
+      if len(team_two) == 2:
+        play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
+        ro64 = NodeGame(region=region, team_one=team_one[0], children=play_in, round_num=round_num)
+      else:
+        ro64 = NodeGame(region=region, team_one=team_one[0], team_two=team_two[0], round_num=round_num)
+      self.game_pairing += 1
+      return ro64
+    else:
+      team_one = self.add_team(region=region, round_num=round_num-1)
+      team_two = self.add_team(region=region, round_num=round_num-1)
+      game = NodeGame(region=region, round_num=round_num, children=[team_one, team_two])
+      return game
+    pass
+
 
   def export_bracket_to_json(self, bracket):
     # c = json.loads(json.dumps(bracket, default=lambda o: o.toJSON()))
@@ -267,16 +290,6 @@ class Bracket:
     return c
     pass
 
-  # def byteify(self, input):
-  #   if isinstance(input, dict):
-  #       return {self.byteify(key): self.byteify(value)
-  #               for key, value in input.items()}
-  #   elif isinstance(input, list):
-  #       return [self.byteify(element) for element in input]
-  #   elif isinstance(input, unicode):
-  #       return input.encode('utf-8')
-  #   else:
-  #       return input
 
 class Team:
   def __init__(self, name, seed, region, elo, picked_frequency):
@@ -391,14 +404,14 @@ class NodeGame(Game, NodeMixin):
       self.team_two.update_elo(self.team_one, True)
     # pass
     self.update_bracket(self.winner)
-    self.update_wins(bracket, self.winner, self.round_num)
+    self.update_wins(model, self.winner, self.round_num)
     # self.winner.wins[self.round_num] += 1
 
   def update_wins(self, bracket, winner, round_number):
     #     for region in all_teams:
     #   for seed in region:
     #     for team in seed:
-    # for game in self.running_bracket.descendants:
+    # for game in self.sim_bracket.descendants:
     #   winner = game.winner
     teams = bracket.all_teams[winner.region][winner.seed]
     if len(teams)==1:
@@ -449,16 +462,15 @@ class NodeGame(Game, NodeMixin):
         self.update_bracket(self.team_two)
     
 t=time.time()
-bracket = Bracket(number_simulations=1, scoring_system=scoring_systems["ESPN"])
-bracket.create_teams()
-bracket.create_bracket()
-bracket.batch_simulate()
+model = Model(number_simulations=1, scoring_system=scoring_systems["ESPN"])
+# model.create_bracket()
+model.batch_simulate()
 t = time.time() - t
-print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
+print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 print(t)
-print(RenderTree(bracket.running_bracket, style=AsciiStyle()))
-a = bracket.output_most_valuable_team()
-b = bracket.export_teams_to_json()
-c = bracket.export_bracket_to_json(a)
-d = bracket.import_bracket_to_json(c)
+print(RenderTree(model.sim_bracket.bracket, style=AsciiStyle()))
+a = model.output_most_valuable_team()
+b = model.export_teams_to_json()
+c = model.export_bracket_to_json(a)
+d = model.import_bracket_to_json(c)
 print(b)
