@@ -1,11 +1,15 @@
+#! python3
 import random
 import math
 import pandas as pd
 from anytree import Node, RenderTree, NodeMixin, AsciiStyle
-from anytree.exporter import DotExporter
+from anytree.exporter import DotExporter, JsonExporter
+from anytree.importer import JsonImporter
 import os
 import copy
 import time
+import json
+
 
 final_four_pairings = {
   "mens" : {
@@ -243,6 +247,37 @@ class Bracket:
     node.pick_more_valuable_team()
     pass
 
+  def export_teams_to_json(self):
+    return json.dumps(self.all_teams, default=lambda o: o.toJSON(), sort_keys=True, ensure_ascii=False)
+
+  def export_bracket_to_json(self, bracket):
+    # c = json.loads(json.dumps(bracket, default=lambda o: o.toJSON()))
+    # c = json.dumps(bracket, default=lambda o: o.toJSON(), ensure_ascii=False)
+    exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
+    c = str(exporter.export(bracket.root))
+    # return exporter.export(self.root)
+    return c
+
+  def import_bracket_to_json(self, bracket):
+    importer = JsonImporter()
+    root = importer.import_(bracket) 
+    c = json.loads(bracket)
+    # d = str(self.byteify(c))
+    root2 = importer.import_(d)
+    return c
+    pass
+
+  # def byteify(self, input):
+  #   if isinstance(input, dict):
+  #       return {self.byteify(key): self.byteify(value)
+  #               for key, value in input.items()}
+  #   elif isinstance(input, list):
+  #       return [self.byteify(element) for element in input]
+  #   elif isinstance(input, unicode):
+  #       return input.encode('utf-8')
+  #   else:
+  #       return input
+
 class Team:
   def __init__(self, name, seed, region, elo, picked_frequency):
     self.name = name
@@ -285,6 +320,20 @@ class Team:
     # update elo for future rounds based on game outcome. not sure how to do this for now so no update to elo will occur
     pass
 
+  def toJSON(self):
+    export_data = {
+      "name" : self.name,
+      "seed" : self.seed,
+      "region" : self.region,
+      "elo" : self.elo,
+      "picked_frequency" : self.picked_frequency,
+      "wins" : self.wins,
+      "expected_points" : self.expected_points,
+      "total_expected_points" : self.total_expected_points,
+    }
+    return export_data
+    # return json.dumps(export_data)
+
 
 class Game:
   # placeholder base class used as anytree implementation requires
@@ -315,6 +364,11 @@ class NodeGame(Game, NodeMixin):
       return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+".  Winner is "+str(self.winner)
     else:
       return "R"+str(self.round_num)+" in the "+str(self.region)+" w/ "+str(self.team_one)+" vs "+str(self.team_two)+"."
+
+  def toJSON(self):
+    exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
+    c = exporter.export(self.root)
+    return exporter.export(self.root)
 
   def simulate_game(self):
     # simulate the outcome of the game using 538's ELO system ( sans travel adjustment)
@@ -395,7 +449,7 @@ class NodeGame(Game, NodeMixin):
         self.update_bracket(self.team_two)
     
 t=time.time()
-bracket = Bracket(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+bracket = Bracket(number_simulations=1, scoring_system=scoring_systems["ESPN"])
 bracket.create_teams()
 bracket.create_bracket()
 bracket.batch_simulate()
@@ -404,6 +458,7 @@ print(RenderTree(bracket.start_bracket, style=AsciiStyle()))
 print(t)
 print(RenderTree(bracket.running_bracket, style=AsciiStyle()))
 a = bracket.output_most_valuable_team()
-DotExporter(a).to_dotfile("mvb.dot")
-DotExporter(bracket.start_bracket).to_dotfile("pudo.png")
-
+b = bracket.export_teams_to_json()
+c = bracket.export_bracket_to_json(a)
+d = bracket.import_bracket_to_json(c)
+print(b)
