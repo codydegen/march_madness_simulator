@@ -143,19 +143,25 @@ class Model:
         assert False, "couldn't find team"
 
   def reset_bracket(self):
-    self.sim_bracket=copy.deepcopy(self.start_bracket)
+    # self.sim_bracket.bracket=copy.deepcopy(self.start_bracket.bracket)
+    self.sim_bracket.reset_bracket()
     pass
 
 # simulation methods
   def batch_simulate(self):
-    for i in range(0, self.number_simulations-1):
-      self.simulate_bracket()
+    for i in range(1, self.number_simulations):
+      t = time.time()
+      self.sim_bracket.simulate_bracket()
+      a = time.time() - t
       # self.update_winners()
       self.reset_bracket()
-      
+      b = time.time() - t
+      c = b-a
       self.completed_simulations += 1
-      if self.completed_simulations%100 == 0:
-        print("simulation number "+str(i+1)+" completed.")
+      # if self.completed_simulations%100 == 0:
+      # print("simulation number "+str(i)+" completed.")
+      print(a, c)
+    self.calculate_expected_points()
 
   def calculate_expected_points(self):
     for region in self.all_teams:
@@ -176,30 +182,12 @@ class Model:
     self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
     return most_valuable_bracket
 
-
-  
-  
-
   def prep_data(self, path):
     # placeholder function for now
     
     return None
   
-  def simulate_bracket(self):
-    self.simulate_bracket_recursion(self.sim_bracket)
-    pass
-  
-  def simulate_bracket_recursion(self, node):
-    # sorted DFS post order
-    for child in node.children:
-      # go through until there are no children
-      if not hasattr(child.winner, 'name'):
-        self.simulate_bracket_recursion(child)
-    # then sim game
-    node.simulate_game()
-    pass
-
-  # my intuition is that I should be able to to both this and the previous functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
+  # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
   def output_most_valuable_teams_for_full_bracket(self, bracket):
     self.most_valuable_teams_recursion(bracket)
     pass
@@ -238,8 +226,6 @@ class Bracket:
     for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
       finals.add_child(self.add_semis(ff_pairings))
     return finals
-    # self.start_bracket = finals
-    # self.sim_bracket = copy.deepcopy(self.start_bracket)
     pass
     
   
@@ -272,6 +258,37 @@ class Bracket:
       return game
     pass
 
+  def simulate_bracket(self):
+    self.simulate_bracket_recursion(self.bracket)
+    pass
+  
+  def simulate_bracket_recursion(self, node):
+    # sorted DFS post order
+    for child in node.children:
+      # go through until there are no children
+      if not hasattr(child.winner, 'name'):
+        self.simulate_bracket_recursion(child)
+    # then sim game
+    node.simulate_game()
+    pass
+
+  def reset_bracket(self):
+    # as it turns out is much more performant to just reset all the teams to blank rather than copying entire object
+    placeholder_team = Team('tbd',0,'tbd',-1,-1)
+    self.reset_bracket_recursion(self.bracket, placeholder_team)
+    
+
+  def reset_bracket_recursion(self, node, team):
+    for child in node.children:
+      if hasattr(child.winner, "name"):
+        self.reset_bracket_recursion(child, team)
+    node.winner = None
+    if len(node.children) == 1:
+      node.team_two = team
+    elif len(node.children) == 2:
+      node.team_one = team
+      node.team_two = team
+
 
   def export_bracket_to_json(self, bracket):
     # c = json.loads(json.dumps(bracket, default=lambda o: o.toJSON()))
@@ -285,7 +302,6 @@ class Bracket:
     importer = JsonImporter()
     root = importer.import_(bracket) 
     c = json.loads(bracket)
-    # d = str(self.byteify(c))
     root2 = importer.import_(d)
     return c
     pass
@@ -408,11 +424,6 @@ class NodeGame(Game, NodeMixin):
     # self.winner.wins[self.round_num] += 1
 
   def update_wins(self, bracket, winner, round_number):
-    #     for region in all_teams:
-    #   for seed in region:
-    #     for team in seed:
-    # for game in self.sim_bracket.descendants:
-    #   winner = game.winner
     teams = bracket.all_teams[winner.region][winner.seed]
     if len(teams)==1:
       team = teams[0]
@@ -422,7 +433,6 @@ class NodeGame(Game, NodeMixin):
       else:
         team = teams[1]
     team.wins[round_number] += 1
-    # bracket.
     pass
 
   def update_bracket(self, winning_team):
@@ -462,12 +472,11 @@ class NodeGame(Game, NodeMixin):
         self.update_bracket(self.team_two)
     
 t=time.time()
-model = Model(number_simulations=1, scoring_system=scoring_systems["ESPN"])
-# model.create_bracket()
+model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
 t = time.time() - t
-print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 print(t)
+print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 print(RenderTree(model.sim_bracket.bracket, style=AsciiStyle()))
 a = model.output_most_valuable_team()
 b = model.export_teams_to_json()
