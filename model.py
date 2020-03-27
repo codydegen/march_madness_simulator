@@ -81,11 +81,13 @@ class Model:
     self.year = year 
     self.all_teams = self.create_teams()
     self.start_bracket = Bracket(model=self)
-    self.sim_bracket = copy.deepcopy(self.start_bracket)
+    self.sim_bracket = Bracket(model=self)
     self.game_pairing = 0
     self.number_simulations = number_simulations
     self.completed_simulations = 0
     self.scoring_system = scoring_system
+    self.simulation_results = []
+    self.imported_brackets = {}
     pass
 
   def create_teams(self):
@@ -149,20 +151,32 @@ class Model:
 
 # simulation methods
   def batch_simulate(self):
-    for i in range(1, self.number_simulations):
-      t = time.time()
+    for i in range(0, self.number_simulations):
+      # t = time.time()
       self.sim_bracket.simulate_bracket()
-      a = time.time() - t
+      self.update_scores()
+      # a = time.time() - t
       # self.update_winners()
       self.reset_bracket()
-      b = time.time() - t
-      c = b-a
+      # b = time.time() - t
+      # c = b-a
       self.completed_simulations += 1
       # if self.completed_simulations%100 == 0:
       # print("simulation number "+str(i)+" completed.")
-      print(a, c)
+      # print(a, c)
     self.calculate_expected_points()
 
+  def update_scores(self):
+    for region in self.all_teams:
+      for seed in self.all_teams[region]:
+        for team in self.all_teams[region][seed]:
+          team.simulation_results.append(team.temp_result)
+          if team.simulation_results[-1] == 0 and len(self.all_teams[region][seed]) == 1:
+            team.simulation_results[-1] = 1
+          team.temp_result = 0
+          pass
+
+  
   def calculate_expected_points(self):
     for region in self.all_teams:
       for seed in self.all_teams[region]:
@@ -178,7 +192,7 @@ class Model:
 
   def output_most_valuable_team(self):
     self.calculate_expected_points()
-    most_valuable_bracket = copy.deepcopy(self.start_bracket)
+    most_valuable_bracket = Bracket(self)
     self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
     return most_valuable_bracket
 
@@ -189,7 +203,7 @@ class Model:
   
   # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
   def output_most_valuable_teams_for_full_bracket(self, bracket):
-    self.most_valuable_teams_recursion(bracket)
+    self.most_valuable_teams_recursion(bracket.bracket)
     pass
   
   def most_valuable_teams_recursion(self, node):
@@ -260,6 +274,7 @@ class Bracket:
 
   def simulate_bracket(self):
     self.simulate_bracket_recursion(self.bracket)
+
     pass
   
   def simulate_bracket_recursion(self, node):
@@ -335,6 +350,8 @@ class Team:
       6:0, 
       7:0, 
     }
+    self.simulation_results = []
+    self.temp_result = 0
     self.total_expected_points = 0
     pass
 
@@ -427,12 +444,24 @@ class NodeGame(Game, NodeMixin):
     teams = bracket.all_teams[winner.region][winner.seed]
     if len(teams)==1:
       team = teams[0]
+      # if there was no play in game, increment round one win total to keep it aligned
+      if round_number == 2:
+        team.wins[1] += 1
     else:
       if teams[0].name == winner.name:
         team = teams[0]
       else:
         team = teams[1]
     team.wins[round_number] += 1
+    team.temp_result = round_number
+    # if len(team.simulation_results) == bracket.completed_simulations:
+    #   team.simulation_results.append(round_number)
+    # elif len(team.simulation_results) < bracket.completed_simulations:
+    #   while len(team.simulation_results) < bracket.completed_simulations:
+    #     team.simulation_results.append(0)
+    #   team.simulation_results.append(round_number)
+    # else:
+    #   team.simulation_results[bracket.completed_simulations] = round_number
     pass
 
   def update_bracket(self, winning_team):
