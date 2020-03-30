@@ -9,6 +9,7 @@ import os
 import copy
 import time
 import json
+import queue
 
 
 final_four_pairings = {
@@ -204,6 +205,7 @@ class Model:
   # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
   def output_most_valuable_teams_for_full_bracket(self, bracket):
     self.most_valuable_teams_recursion(bracket.bracket)
+    # bracket.bracket.root.pick_more_valuable_team()
     pass
   
   def most_valuable_teams_recursion(self, node):
@@ -305,20 +307,43 @@ class Bracket:
       node.team_two = team
 
 
-  def export_bracket_to_json(self, bracket):
+  def export_bracket_to_json(self, bracket, name):
     # c = json.loads(json.dumps(bracket, default=lambda o: o.toJSON()))
     # c = json.dumps(bracket, default=lambda o: o.toJSON(), ensure_ascii=False)
+    export_teams = set()
+    game_list = queue.SimpleQueue()
+    results_list = {}
+    results_list[bracket.root.winner.name] = 7
+    game_list.put(bracket.root)
+    while game_list.qsize() != 0:
+      current_game = game_list.get()
+      if current_game.team_one.name not in results_list:
+        results_list[current_game.team_one.name] = current_game.round_num - 1
+      if current_game.team_two.name not in results_list:
+        results_list[current_game.team_two.name] = current_game.round_num - 1
+      for child in current_game.children:
+        game_list.put(child)
+    results = {}
+    results["teamPicks"] = results_list
+    results["name"] = name
+    results["method"] = "simulation"
+    results["entryID"] = None
+    results["source"] = None
+    a = json.dumps(results)
+    return a
+    
+
     exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
-    c = str(exporter.export(bracket.root))
+    c = str(exporter.export(bracket))
     # return exporter.export(self.root)
     return c
 
-  def import_bracket_to_json(self, bracket):
+  def import_bracket_json(self, source):
     importer = JsonImporter()
-    root = importer.import_(bracket) 
-    c = json.loads(bracket)
-    root2 = importer.import_(d)
-    return c
+    root = importer.import_(source) 
+    c = json.loads(source)
+    # root2 = importer.import_(d)
+    return root
     pass
 
 
@@ -368,7 +393,7 @@ class Team:
 
   def toJSON(self):
     export_data = {
-      "name" : self.name,
+        "name" : self.name,
       "seed" : self.seed,
       "region" : self.region,
       "elo" : self.elo,
@@ -377,6 +402,7 @@ class Team:
       "expected_points" : self.expected_points,
       "total_expected_points" : self.total_expected_points,
     }
+
     return export_data
     # return json.dumps(export_data)
 
@@ -427,16 +453,16 @@ class NodeGame(Game, NodeMixin):
     # print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
-      self.winner = self.team_one
+      winner = self.team_one
       self.team_one.update_elo(self.team_two, True)
       self.team_two.update_elo(self.team_one, False)
     else:
       # team two wins
-      self.winner = self.team_two
+      winner = self.team_two
       self.team_one.update_elo(self.team_two, False)
       self.team_two.update_elo(self.team_one, True)
     # pass
-    self.update_bracket(self.winner)
+    self.update_bracket(winner)
     self.update_wins(model, self.winner, self.round_num)
     # self.winner.wins[self.round_num] += 1
 
@@ -466,6 +492,8 @@ class NodeGame(Game, NodeMixin):
 
   def update_bracket(self, winning_team):
     # update bracket with results of game
+    assert not self.winner, "game between "+str(self.team_one)+" and  "+str(self.team_two)+" already has been played."
+    self.winner = winning_team
     if self.parent:
       if self.parent.team_one.name == "tbd":
         self.parent.team_one = winning_team 
@@ -500,6 +528,22 @@ class NodeGame(Game, NodeMixin):
       else:
         self.update_bracket(self.team_two)
     
+class Entry:
+  def __init__(self, method="empty", source=None):
+    if method == "empty":
+      self.bracket = self.create_bracket()
+    elif method == "json":
+      self.bracket = self.import_bracket_json(source)
+    elif method == "url":
+      self.bracket = self.import_bracket_url(source)
+    else:
+      raise Exception("unknown method designated for bracket creation, creating empty bracket")
+      self.bracket = create_bracket()
+    self.index = 0
+    self.scores = []
+
+
+
 t=time.time()
 model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
@@ -509,6 +553,6 @@ print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 print(RenderTree(model.sim_bracket.bracket, style=AsciiStyle()))
 a = model.output_most_valuable_team()
 b = model.export_teams_to_json()
-c = model.export_bracket_to_json(a)
-d = model.import_bracket_to_json(c)
-print(b)
+c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
+d = Bracket(model=model, method="json", source=c)
+print(d)
