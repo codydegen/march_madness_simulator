@@ -35,33 +35,72 @@ final_four_pairings = {
 # different scoring systems for different brackets so expected points can be calculated
 scoring_systems = {
   "ESPN" : {
-    1 : 0,
-    2 : 10,
-    3 : 20,
-    4 : 40,
-    5 : 80,
-    6 : 160,
-    7 : 320,
+    "round" : {
+      0 : 0,
+      1 : 0,
+      2 : 10,
+      3 : 20,
+      4 : 40,
+      5 : 80,
+      6 : 160,
+      7 : 320,
+      },
+    "cumulative" : {
+      0 : 0,
+      1 : 0,
+      2 : 10,
+      3 : 30,
+      4 : 70,
+      5 : 150,
+      6 : 310,
+      7 : 630,
+      },
   },
 
   "wins_only" : {
-    1 : 0,
-    2 : 1,
-    3 : 1,
-    4 : 1,
-    5 : 1,
-    6 : 1,
-    7 : 1,
+    "round" : {
+      0 : 0,
+      1 : 0,
+      2 : 1,
+      3 : 1,
+      4 : 1,
+      5 : 1,
+      6 : 1,
+      7 : 1,
+    }, 
+    "cumulative" : {
+      0 : 0,
+      1 : 0,
+      2 : 1,
+      3 : 2,
+      4 : 3,
+      5 : 4,
+      6 : 5,
+      7 : 6,
+      },
   },
 
   "degen_bracket" : {
-    1 : 0,
-    2 : 2,
-    3 : 3,
-    4 : 5,
-    5 : 8,
-    6 : 13,
-    7 : 21,
+    "round" : {
+      0 : 0,
+      1 : 0,
+      2 : 2,
+      3 : 3,
+      4 : 5,
+      5 : 8,
+      6 : 13,
+      7 : 21,
+    },
+    "cumulative" : {
+      0 : 0,
+      1 : 0,
+      2 : 2,
+      3 : 5,
+      4 : 10,
+      5 : 18,
+      6 : 31,
+      7 : 52,
+      },
   }
 }
 
@@ -88,7 +127,7 @@ class Model:
     self.completed_simulations = 0
     self.scoring_system = scoring_system
     self.simulation_results = []
-    self.imported_brackets = {}
+    self.imported_brackets = []
     pass
 
   def create_teams(self):
@@ -184,7 +223,7 @@ class Model:
         for team in self.all_teams[region][seed]:
           total_expected_points = 0
           for ep in team.expected_points:
-            round_expected_points = float(team.wins[ep]) / float(self.number_simulations) * float(self.scoring_system[ep])
+            round_expected_points = float(team.wins[ep]) / float(self.number_simulations) * float(self.scoring_system["round"][ep])
             team.expected_points[ep] = round_expected_points
             total_expected_points += round_expected_points
           team.total_expected_points = total_expected_points
@@ -221,6 +260,23 @@ class Model:
   def export_teams_to_json(self):
     return json.dumps(self.all_teams, default=lambda o: o.toJSON(), sort_keys=True, ensure_ascii=False)
 
+  def add_entry(self, entry):
+    entry.index = len(self.imported_brackets)
+    self.imported_brackets.append(entry)
+    self.update_entry_score(entry)
+
+  def update_entry_score(self, entry):
+    for region in self.all_teams:
+      for seed in self.all_teams[region]:
+        for team in self.all_teams[region][seed]:
+          while len(team.entry_picks) < entry.index+1:
+            team.entry_picks.append(-1)
+          team.entry_picks[entry.index] = entry.team_picks[team.region][team.seed][team.name]
+          for i in range(0, len(team.simulation_results)):
+            if len(entry.scores) <= i:
+              entry.scores.append(0)
+            entry.scores[i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks[entry.index])]
+    pass
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -308,23 +364,33 @@ class Bracket:
 
 
   def export_bracket_to_json(self, bracket, name):
-    # c = json.loads(json.dumps(bracket, default=lambda o: o.toJSON()))
-    # c = json.dumps(bracket, default=lambda o: o.toJSON(), ensure_ascii=False)
-    export_teams = set()
     game_list = queue.SimpleQueue()
     results_list = {}
-    results_list[bracket.root.winner.name] = 7
+    for region in self.model.all_teams:
+      results_list[region] = {}
+      for seed in self.model.all_teams[region]:
+        results_list[region][seed] = {}
+        for team in self.model.all_teams[region][seed]:
+          results_list[region][seed][team.name] = -1
+    winner = bracket.root.winner
+    results_list[winner.region][winner.seed][winner.name] = 7
     game_list.put(bracket.root)
     while game_list.qsize() != 0:
       current_game = game_list.get()
-      if current_game.team_one.name not in results_list:
-        results_list[current_game.team_one.name] = current_game.round_num - 1
-      if current_game.team_two.name not in results_list:
-        results_list[current_game.team_two.name] = current_game.round_num - 1
+      temp_region = current_game.team_one.region
+      temp_seed = current_game.team_one.seed
+      temp_name = current_game.team_one.name
+      if results_list[temp_region][temp_seed][temp_name] == -1:
+        results_list[temp_region][temp_seed][temp_name] = current_game.round_num - 1
+      temp_region = current_game.team_two.region
+      temp_seed = current_game.team_two.seed
+      temp_name = current_game.team_two.name
+      if results_list[temp_region][temp_seed][temp_name] == -1:
+        results_list[temp_region][temp_seed][temp_name] = current_game.round_num - 1
       for child in current_game.children:
         game_list.put(child)
     results = {}
-    results["teamPicks"] = results_list
+    results["team_picks"] = results_list
     results["name"] = name
     results["method"] = "simulation"
     results["entryID"] = None
@@ -378,6 +444,7 @@ class Team:
     self.simulation_results = []
     self.temp_result = 0
     self.total_expected_points = 0
+    self.entry_picks = []
     pass
 
   def __str__(self):
@@ -529,23 +596,34 @@ class NodeGame(Game, NodeMixin):
         self.update_bracket(self.team_two)
     
 class Entry:
-  def __init__(self, method="empty", source=None):
+  def __init__(self, method, source):
     if method == "empty":
-      self.bracket = self.create_bracket()
-    elif method == "json":
-      self.bracket = self.import_bracket_json(source)
+      raise Exception("unknown method designated for bracket creation")
+    elif method == "simulation":
+      self.import_bracket_json(source)
     elif method == "url":
       self.bracket = self.import_bracket_url(source)
     else:
-      raise Exception("unknown method designated for bracket creation, creating empty bracket")
+      raise Exception("unknown method designated for bracket creation")
       self.bracket = create_bracket()
+    
     self.index = 0
     self.scores = []
+    model.add_entry(self)
+
+  def import_bracket_json(self, source):
+    b = json.loads(source)
+    self.team_picks = b["team_picks"]
+    self.entryID = b["entryID"]
+    self.method = b["method"]
+    self.team_picks = b["team_picks"]
+    self.source = b["source"]
+    pass
 
 
 
 t=time.time()
-model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
 t = time.time() - t
 print(t)
@@ -554,5 +632,5 @@ print(RenderTree(model.sim_bracket.bracket, style=AsciiStyle()))
 a = model.output_most_valuable_team()
 b = model.export_teams_to_json()
 c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
-d = Bracket(model=model, method="json", source=c)
+d = Entry(method="simulation", source=c)
 print(d)
