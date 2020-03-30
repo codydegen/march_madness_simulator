@@ -10,6 +10,7 @@ import copy
 import time
 import json
 import queue
+import csv
 
 
 final_four_pairings = {
@@ -139,7 +140,8 @@ class Model:
     else:
       print(" couldn't find data")
       # TBD, hook up data scraping to this
-      a = self.prep_data(path)
+      raise Exception("this_shouldn't_have_happened")
+      # a = self.prep_data(path)
 
     team_data = pd.read_csv(path)
     gender_specific = team_data[team_data.gender == self.gender]
@@ -148,6 +150,7 @@ class Model:
     df = gender_specific[gender_specific.forecast_date == earliest_date]
     for ind in df.index:
       picks = {
+        1:'0.0%',
         2:df["R64_picked"][ind], 
         3:df["R32_picked"][ind], 
         4:df["S16_picked"][ind], 
@@ -171,7 +174,6 @@ class Model:
         all_teams[team_region][team_seed].append(team)
     return all_teams
     
-
   def team_look_up(self, team):
     teams = self.all_teams[team.region][team.seed]
     if len(teams) == 1:
@@ -231,10 +233,18 @@ class Model:
     pass
 
   def output_most_valuable_team(self):
+    # (TD) this can be exported into JSON format without going into the intermediate bracket step
     self.calculate_expected_points()
     most_valuable_bracket = Bracket(self)
-    self.output_most_valuable_teams_for_full_bracket(most_valuable_bracket)
+    self.postprocess_bracket(most_valuable_bracket, "expected_points")
     return most_valuable_bracket
+
+  def output_most_popular_picks(self):
+    # (TD) this can be exported into JSON format without going into the intermediate bracket step
+    # self.calculate_expected_points()
+    most_popular_bracket = Bracket(self)
+    self.postprocess_bracket(most_popular_bracket, "picked_frequency")
+    return most_popular_bracket
 
   def prep_data(self, path):
     # placeholder function for now
@@ -242,19 +252,19 @@ class Model:
     return None
   
   # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
-  def output_most_valuable_teams_for_full_bracket(self, bracket):
-    self.most_valuable_teams_recursion(bracket.bracket)
-    # bracket.bracket.root.pick_more_valuable_team()
+  def postprocess_bracket(self, bracket, criteria):
+    self.postprocess_recursion(bracket.bracket, criteria)
+    # bracket.bracket.root.postprocess_pick_team()
     pass
   
-  def most_valuable_teams_recursion(self, node):
+  def postprocess_recursion(self, node, criteria):
     # sorted DFS post order
     for child in node.children:
       # go through until there are no children
       if not hasattr(child.winner, 'name'):
-        self.most_valuable_teams_recursion(child)
+        self.postprocess_recursion(child, criteria)
     # then sim game
-    node.pick_more_valuable_team()
+    node.postprocess_pick_team(criteria)
     pass
 
   def export_teams_to_json(self):
@@ -278,6 +288,8 @@ class Model:
             entry.scores[i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks[entry.index])]
     pass
 
+
+
 class Bracket:
   def __init__(self, model, method="empty", source=None):
     self.game_pairing = 0
@@ -285,12 +297,14 @@ class Bracket:
     if method == "empty":
       self.bracket = self.create_bracket()
     elif method == "json":
-      self.bracket = self.import_bracket_json(source)
+      raise Exception("unknown method designated for bracket creation, creating empty bracket")
+      # self.bracket = self.import_bracket_json(source)
     elif method == "url":
-      self.bracket = self.import_bracket_url(source)
+      raise Exception("unknown method designated for bracket creation, creating empty bracket")
+      # self.bracket = self.import_bracket_url(source)
     else:
       raise Exception("unknown method designated for bracket creation, creating empty bracket")
-      self.bracket = create_bracket()
+      # self.bracket = create_bracket()
     pass
 
   def create_bracket(self):
@@ -298,8 +312,6 @@ class Bracket:
     for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
       finals.add_child(self.add_semis(ff_pairings))
     return finals
-    pass
-    
   
   def add_semis(self, pairing):
     # create top of bracket
@@ -397,20 +409,16 @@ class Bracket:
     results["source"] = None
     a = json.dumps(results)
     return a
-    
 
-    exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
-    c = str(exporter.export(bracket))
-    # return exporter.export(self.root)
-    return c
-
-  def import_bracket_json(self, source):
-    importer = JsonImporter()
-    root = importer.import_(source) 
-    c = json.loads(source)
-    # root2 = importer.import_(d)
-    return root
+  def import_bracket_url(self):
     pass
+
+  # def import_bracket_json(self, source):
+  #   importer = JsonImporter()
+  #   root = importer.import_(source) 
+  #   c = json.loads(source)
+  #   # root2 = importer.import_(d)
+  #   return root
 
 
 class Team:
@@ -469,9 +477,7 @@ class Team:
       "expected_points" : self.expected_points,
       "total_expected_points" : self.total_expected_points,
     }
-
     return export_data
-    # return json.dumps(export_data)
 
 
 class Game:
@@ -506,7 +512,7 @@ class NodeGame(Game, NodeMixin):
 
   def toJSON(self):
     exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
-    c = exporter.export(self.root)
+    # c = exporter.export(self.root)
     return exporter.export(self.root)
 
   def simulate_game(self):
@@ -515,9 +521,7 @@ class NodeGame(Game, NodeMixin):
 
     # make sure the game doesn't already have a winner
     assert not self.winner, "game between "+str(self.team_one)+" and  "+str(self.team_two)+" already has been played."
-
     team_one_chance = 1.0/(1.0 + pow(10,(-(self.team_one.elo-self.team_two.elo))*30.464/400))
-    # print(self.team_one.name+"'s chance of winning vs "+self.team_two.name+" = "+str(math.trunc(team_one_chance*100))+"%")
     if random.random() < team_one_chance:
       # team one wins
       winner = self.team_one
@@ -531,7 +535,6 @@ class NodeGame(Game, NodeMixin):
     # pass
     self.update_bracket(winner)
     self.update_wins(model, self.winner, self.round_num)
-    # self.winner.wins[self.round_num] += 1
 
   def update_wins(self, bracket, winner, round_number):
     teams = bracket.all_teams[winner.region][winner.seed]
@@ -547,14 +550,6 @@ class NodeGame(Game, NodeMixin):
         team = teams[1]
     team.wins[round_number] += 1
     team.temp_result = round_number
-    # if len(team.simulation_results) == bracket.completed_simulations:
-    #   team.simulation_results.append(round_number)
-    # elif len(team.simulation_results) < bracket.completed_simulations:
-    #   while len(team.simulation_results) < bracket.completed_simulations:
-    #     team.simulation_results.append(0)
-    #   team.simulation_results.append(round_number)
-    # else:
-    #   team.simulation_results[bracket.completed_simulations] = round_number
     pass
 
   def update_bracket(self, winning_team):
@@ -568,9 +563,7 @@ class NodeGame(Game, NodeMixin):
         self.parent.team_two = winning_team
       else:
         raise Exception("both teams in parent exist: "+self.parent.team_one+" "+self.parent.team_two)
-
     pass
-
   
   def add_child(self, child):
     if type(child) is list:
@@ -580,16 +573,14 @@ class NodeGame(Game, NodeMixin):
       child.parent = self
     pass
 
-  def pick_more_valuable_team(self):
-    # between two teams in a matchup, pick the team with more expected points. Used to visualize results
-    # self.team_one.total_expected_points = bracket.team_look_up(self.team_one).total_expected_points
-    # self.team_two.total_expected_points = bracket.team_look_up(self.team_two).total_expected_points
-    if self.team_one.total_expected_points > self.team_two.total_expected_points:
+  def postprocess_pick_team(self, criteria):
+    # between two teams in a matchup, pick the team with more of the given criteria. Used to visualize results
+    if getattr(self.team_one, criteria)[self.round_num] > getattr(self.team_two, criteria)[self.round_num]:
       self.update_bracket(self.team_one)
-    elif self.team_one.total_expected_points < self.team_two.total_expected_points:
+    elif getattr(self.team_one, criteria)[self.round_num] < getattr(self.team_two, criteria)[self.round_num]:
       self.update_bracket(self.team_two)
     else:
-      print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same expected points.")
+      print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same "+criteria)
       if random.random() < 0.5:
         self.update_bracket(self.team_one)
       else:
@@ -601,11 +592,12 @@ class Entry:
       raise Exception("unknown method designated for bracket creation")
     elif method == "simulation":
       self.import_bracket_json(source)
+    
     elif method == "url":
       self.bracket = self.import_bracket_url(source)
     else:
       raise Exception("unknown method designated for bracket creation")
-      self.bracket = create_bracket()
+      # self.bracket = create_bracket()
     
     self.index = 0
     self.scores = []
@@ -623,14 +615,27 @@ class Entry:
 
 
 t=time.time()
-model = Model(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=2000, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
 t = time.time() - t
-print(t)
-print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
-print(RenderTree(model.sim_bracket.bracket, style=AsciiStyle()))
 a = model.output_most_valuable_team()
-b = model.export_teams_to_json()
+# print(t)
+print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
+
+b = model.output_most_popular_picks()
+print(RenderTree(b.bracket, style=AsciiStyle()))
+
+# b = model.export_teams_to_json()
 c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
+e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
 d = Entry(method="simulation", source=c)
+f = Entry(method="simulation", source=e)
+
+with open('eggs.csv', 'w', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    spamwriter.writerow(d.scores)
+    spamwriter.writerow(f.scores)
+
 print(d)
+# e = Entry()
