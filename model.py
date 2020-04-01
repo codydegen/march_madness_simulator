@@ -594,7 +594,7 @@ class Entry:
       self.import_bracket_json(source)
     
     elif method == "url":
-      self.bracket = self.import_bracket_url(source)
+      self.import_bracket_url(source)
     else:
       raise Exception("unknown method designated for bracket creation")
       # self.bracket = create_bracket()
@@ -612,12 +612,15 @@ class Entry:
     self.source = b["source"]
     pass
 
+  def import_bracket_url(self, source):
+    pass
+
 
 
 t=time.time()
-model = Model(number_simulations=2000, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
-t = time.time() - t
+# t = time.time() - t
 a = model.output_most_valuable_team()
 # print(t)
 print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
@@ -628,14 +631,16 @@ print(RenderTree(b.bracket, style=AsciiStyle()))
 # b = model.export_teams_to_json()
 c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
 e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
+# k = model.start_bracket.export_bracket_to_json(model.start_bracket.bracket, "start bracket")
 d = Entry(method="simulation", source=c)
 f = Entry(method="simulation", source=e)
+# g = Entry(method="simulation", source=k)
 
-with open('eggs.csv', 'w', newline='') as csvfile:
+with open('egsgs.csv', 'w', newline='') as csvfile:
     spamwriter = csv.writer(csvfile, delimiter=',',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    spamwriter.writerow(d.scores)
-    spamwriter.writerow(f.scores)
+    spamwriter.writerow(g.scores)
 
-print(d)
+t = time.time() - t
+print(t)
 # e = Entry()

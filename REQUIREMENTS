@@ -2,3 +2,5 @@ anytree
 bs4
 selenium
 pandas
+requests
+lxml

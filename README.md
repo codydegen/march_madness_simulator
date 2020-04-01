@@ -23,6 +23,10 @@ The purpose here is to leverage what we know about other people to pick some tea
 ## Technologies
 * Python
 
+## Getting started
+* install python3
+* pip install -r REQUIREMENTS --user
+
 ## To-Do
 * knowing who the best teams are
   * enhance model to update elo after early round wins

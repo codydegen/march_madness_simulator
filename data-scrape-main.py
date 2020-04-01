@@ -1,8 +1,3 @@
-# from bs4 import BeautifulSoup
-# from selenium import webdriver
-# import pandas as pd
-# import time
-# import requests
 import ds
 
 # http://free-proxy.cz/en/proxylist/country/US/http/ping/all
@@ -33,4 +28,8 @@ highlyQuestionable_2019 = {
   "year": 2019
 }
 
-ds.main(PROXY, sportsCenter_2019)
+# dst = ds.TopLevelScrape()
+# dst.main(PROXY, sportsCenter_2019)
+
+b = ds.BracketScrape()
+b.open_consolidated(PROXY, sportsCenter_2019)
