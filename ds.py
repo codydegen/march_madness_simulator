@@ -175,7 +175,7 @@ class BracketScrape:
     path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
     # path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/test/"
 
-    path_consolidated = "scraped_brackets/"+str(dataset["year"])+"/bracket_results/sc_"
+    path_consolidated = "scraped_brackets/"+str(dataset["year"])+"/bracket_results/hq_"
     open_file = open(path_consolidated+"consolidated.json", "a")
     c = {}
     for filename in os.listdir(path_open):
@@ -198,7 +198,7 @@ class BracketScrape:
     print("file ")
 
   def open_consolidated(self, PROXY, dataset):
-    path_consolidated = "scraped_brackets/2019/bracket_results/sc_"
+    path_consolidated = "scraped_brackets/2019/bracket_results/hq_"
     open_file = open(path_consolidated+"consolidated.json", "r")
     d = json.load(open_file)
     open_file.close()
@@ -270,13 +270,6 @@ class BracketScrape:
         json.dump(d, open_file)
         print("finished saving!")
     pass
-
-
-
-
-
-
-
 
 
 

@@ -32,4 +32,4 @@ highlyQuestionable_2019 = {
 # dst.main(PROXY, sportsCenter_2019)
 
 b = ds.BracketScrape()
-b.open_consolidated(PROXY, sportsCenter_2019)
+b.pass_to_consolidated(PROXY, highlyQuestionable_2019)

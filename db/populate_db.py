@@ -1,0 +1,288 @@
+import json
+import sqlite3
+import os
+import requests
+import random
+from pathlib import Path
+from bs4 import BeautifulSoup
+import time
+
+def populate_teams_table(db, teams):
+  columns = ["name", "region", "seed", "elo", "pick_rate_1", "pick_rate_2", "pick_rate_3", "pick_rate_4", "pick_rate_5", "pick_rate_6", "pick_rate_7"]
+  with db:
+    current = db.cursor()
+    i=1
+    for region in teams:
+      for seed in teams[region]:
+        for team in teams[region][seed]:
+          picked_frequency = [None] * 7
+          for pick in team["picked_frequency"]:
+            picked_frequency[int(pick)-1] = round(float(team["picked_frequency"][pick].strip("%"))*.01, 3)
+          # print(team)
+          data = [team["name"], region, int(seed), team["elo"]] + picked_frequency
+          data = tuple(data)
+          i += 1
+          # print(data)
+          query = '''INSERT OR IGNORE INTO teams ('''+", ".join(columns)+''') VALUES (?'''+",?"*(len(data)-1)+''')''' # WHERE NOT EXISTS (SELECT * FROM teams WHERE team = '''+team["name"]+''')'''
+
+          current.execute(query, data)
+
+def populate_entries_table(db, entries, group_id):
+  print("populating bracket")
+  with db:
+    current = db.cursor()
+    for entry in entries:
+      add_entries_to_database(db, entry)
+      add_group_entries_to_database(db, group_id, entry)
+      # print(entry)
+    db.commit()
+
+def add_entries_to_database(db, entry):
+  current = db.cursor()
+  entry_query = '''INSERT OR IGNORE INTO entries (id, name, espn_score, espn_percentile) 
+                                  VALUES (?,?,?,?);'''
+  entry_data = (int(entry), "NULL", int(entries[entry]["actual_results"]["score"]), float(entries[entry]["actual_results"]["percentile"]))
+  current.execute(entry_query, entry_data)
+  return entry
+
+
+
+def scrape_data_for_entries(db, ip_addresses):
+  # take key from database
+  current_path = os.path.dirname(__file__)
+  empty_bracket_file = open(os.path.join(current_path, r"..\\scraped_brackets\\2019\\empty.json"), "r")
+  reverse_lookup_file = open(os.path.join(current_path, r"..\\scraped_brackets\\2019\\reverse_lookup.json"), "r")
+  reverse_bracket = json.load(reverse_lookup_file)
+  empty_bracket = json.load(empty_bracket_file)
+
+  # identify whether there are picks for this entry
+  with db:
+    current = db.cursor()
+    select_table_query = ''' SELECT *  FROM entries 
+                             LEFT OUTER JOIN picks ON picks.entry_id = entries.id
+                             WHERE picks.team_id IS NULL;'''
+    current.execute(select_table_query)
+    valid_keys = current.fetchall()
+  # establish a proxy
+  for key in valid_keys:
+    url = "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/entry?entryID="+str(key[0])
+    try:
+      proxy_index = random.randint(0, len(ip_addresses) - 1)
+      proxies = {"http": ip_addresses[proxy_index], 
+              "https": ip_addresses[proxy_index]}
+    except:
+      print("proxy failed")
+    # implement here what to do when there’s a connection error
+    # for example: remove the used proxy from the pool and retry the request using another one
+    page = requests.get(url, proxies=proxies)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    entry_id = key[0]
+    user_picked_teams = soup.select(".selectedToAdvance")
+    user_groups = soup.select(".user-entries-entry-groups")
+    username = soup.select(".profileLink")
+    entry_name = soup.select(".entry-details-entryname")
+    predicted_score_winner = soup.select("#t1")
+    predicted_score_loser = soup.select("#t2")
+    if(len(predicted_score_winner) > 0):
+      update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser)
+      user_id = add_user_to_database(db, username)
+      user_entry_id = add_user_entries_to_database(db, user_id, key)
+      add_other_user_brackets_to_database(db)
+      add_groups_and_group_entries_to_database(db, user_groups, entry_id)
+      add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
+      db.commit()
+      print("\n\ndata updated for entry "+str(entry_id))
+    else:
+      print("\n\nno bracket was filled out for entry"+str(entry_id))
+    time.sleep(3)
+
+def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html):
+  predicted_score_winner = predicted_score_winner_html[0].value
+  predicted_score_loser = predicted_score_loser_html[0].value
+  entry_id = entry[0]
+  assert len(entry_html) == 1, " more than one entry name been identified"
+  entry_name = entry_html[0].text
+  current = db.cursor()
+  query = '''UPDATE entries
+              SET name = ?, predicted_score_winner = ?, predicted_score_loser = ?
+              WHERE id = ?'''
+  data = (entry_name, predicted_score_winner, predicted_score_loser, entry_id)
+  current.execute(query, data)
+  confirm_query = '''SELECT * FROM entries
+                      WHERE id = ?'''
+  validation_data = tuple([entry_id])
+  validation = current.execute(confirm_query, validation_data).fetchall()
+  # print(validation)
+  # db.commit()
+  return entry_id
+
+def add_user_to_database(db, username_html):
+  assert len(username_html) == 1, " more than one username name been identified"
+  name = username_html[0].text
+
+  current = db.cursor()
+  query = '''INSERT OR IGNORE INTO users (name) 
+                  VALUES (?);'''
+  data = tuple([name])
+  current.execute(query, data)
+  # db.commit()
+  last_id = current.lastrowid
+  if last_id == 0:
+    print(" user already in users table")
+    validation_query = '''SELECT DISTINCT id FROM users
+                            WHERE name = ?;'''
+    validation = current.execute(validation_query, data).fetchone()[0]
+    return validation
+  else:
+    print("new entry, username is "+name+", ID is "+str(last_id))
+    return last_id 
+
+def add_user_entries_to_database(db, user_id, entry):
+  # assert len(username_html) == 1, " more than one username name been identified"
+  current = db.cursor()
+  entry_id = entry[0]
+  query = '''INSERT OR IGNORE INTO user_entries (id, user_id, entry_id)
+                VALUES (?,?,?);'''
+  new_id = "u"+str(user_id)+"e"+str(entry_id)
+  data = (new_id, user_id, entry_id)
+  current.execute(query, data)
+  # db.commit()
+  last_id = current.lastrowid
+  if last_id == 0:
+    print(" entry already in user_entries table")
+    validation_query = '''SELECT id FROM user_entries
+                            WHERE id = ?;'''
+    
+    validation = current.execute(validation_query, tuple([new_id]))
+    return validation
+  else:
+    print("new entry, ID is "+str(last_id))
+    return last_id 
+
+  
+
+def add_other_user_brackets_to_database(db):
+  # right now I'm not sure how to identify other entries from a single user.
+  pass
+
+def add_groups_and_group_entries_to_database(db, user_groups, entry_id):
+  # current = db.cursor()
+  if len(user_groups[0].contents) == 3:
+    group_list = user_groups[0].contents[2]
+    if group_list.attrs['class'][1] == "groupConsolidator":
+      for option in group_list.contents[1].contents:
+        if not isinstance(option, str):
+          if option.attrs["value"] != "":
+            group_id = option.attrs["value"].split("=")[1]
+            group_name = option.text.strip()
+            add_group_to_database(db, group_id, group_name)
+            add_group_entries_to_database(db, group_id, entry_id)
+          pass
+      pass
+    else:
+      assert False, "add text"
+  elif len(user_groups[0].contents) == 4:
+    for group in user_groups[0].contents:
+      if group.name == "a":
+        group_id = group.attrs["href"].split("=")[1]
+        group_name = group.text.strip()
+        add_group_to_database(db, group_id, group_name)
+        add_group_entries_to_database(db, group_id, entry_id)
+
+  else:
+    group = user_groups[0].contents[1]
+    group_id = group.attrs["href"].split("=")[1]
+    group_name = group.text.strip()
+    add_group_to_database(db, group_id, group_name)
+    add_group_entries_to_database(db, group_id, entry_id)
+
+
+
+def add_group_to_database(db, group_id, group_name):
+  current = db.cursor()
+  data = (group_id, group_name)
+  query = '''INSERT OR IGNORE INTO groups (id, name) VALUES (?,?);'''
+  current.execute(query, data)
+  db.commit()
+  print(" adding group "+str(group_name)+" with group ID "+str(group_id))
+  return group_id
+
+def add_group_entries_to_database(db, group_id, entry_id):
+  current = db.cursor()
+  group_entries_id = "g"+str(group_id)+"_e"+str(entry_id)
+  group_entries_query = '''INSERT OR IGNORE INTO group_entries (id, entry_id, group_id) 
+                              VALUES (?,?,?)'''
+  group_entries_data = (group_entries_id, entry_id, group_id)
+  current.execute(group_entries_query, group_entries_data)
+  return group_entries_id
+
+def add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id):
+  
+  # team_picks = json.load(empty_bracket)
+  team_picks = json.loads(json.dumps(empty_bracket))
+  for game in user_picked_teams:
+    # print(i)
+    for child in game.contents:
+      if "title" in child.attrs:
+        team = child.attrs["title"]
+        break
+    region = reverse_bracket[team]["region"]
+    seed = reverse_bracket[team]["seed"]
+    # I have to add this one because this is the easiest way to fix issues with multiple names being used for the same team i.e. VCU versus Virginia Commonwealth
+    team = reverse_bracket[team]["team"]
+    if(team_picks[region][seed][team] < 7):
+      team_picks[region][seed][team] += 1
+  # print(team_picks)
+  # can probably eventually do this faster
+  current = db.cursor()
+  team_query = '''SELECT * FROM teams;'''
+  team_table = current.execute(team_query).fetchall()
+  for team in team_table:
+    team_id = team[0]
+    pick_id = "e"+str(entry_id)+"t"+str(team_id)
+    wins = team_picks[team[2]][str(team[3])][team[1]]
+    picks_query = '''INSERT OR IGNORE INTO picks (id, entry_id, team_id, wins) 
+                          VALUES (?,?,?,?)'''
+    picks_data = (pick_id, entry_id, team_id, wins)
+    current.execute(picks_query, picks_data)
+  
+    # if team in team_picks.keys():
+    #   if team_picks[team] < 7:
+    #     team_picks[team] += 1
+    # else:
+    #   team_picks[team] = 2
+
+
+
+  # if not, scrape the webpage associated with this bracket
+
+  # add pics to the pics table
+
+  # if there are groups add them to the groups table
+
+  # if there are groups, populate the group entries table
+  pass
+
+def main():
+  # dataFolder = os.path.relpath(r"C:/Users/Cody/Documents/Projects/march_madness/team_data/team_m2019_20200407_0840.json",r"C:/Users/Cody/Documents/Projects/march_madness/db")
+  team_data = r'..\\team_data\\team_m2019_20200407_0840.json'
+  entries_data = r'..\\scraped_brackets\\2019\\bracket_results\\hq_consolidated.json'
+  
+
+  current_path = os.path.dirname(__file__)
+  new_team_data = os.path.join(current_path, team_data)
+  new_entries_data = os.path.join(current_path, entries_data)
+
+  teams = json.load(open(new_team_data, "r"))
+  entries = json.load(open(new_entries_data, "r"))
+
+  database_string = r"db\\m2019.db"
+  db = sqlite3.connect(database_string)
+  populate_teams_table(db, teams)
+  # add_group_to_database(db, 2895266, "Highly Questionable!")
+  # populate_entries_table(db, entries, 2895266)
+  ip_addresses = ["52.179.231.206:80", "52.179.231.206:80"]
+  scrape_data_for_entries(db, ip_addresses)
+  
+if __name__ == '__main__':
+    main()

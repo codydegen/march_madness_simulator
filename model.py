@@ -132,7 +132,7 @@ class Model:
     pass
 
   def create_teams(self):
-    path = "data/"+str(self.year)+"_all_prepped_data.csv"
+    path = "team_data/"+str(self.year)+"_all_prepped_data.csv"
     all_teams = {}
     if os.path.exists(path):
       print(" found data")
@@ -150,7 +150,7 @@ class Model:
     df = gender_specific[gender_specific.forecast_date == earliest_date]
     for ind in df.index:
       picks = {
-        1:'0.0%',
+        1:'100.0%',
         2:df["R64_picked"][ind], 
         3:df["R32_picked"][ind], 
         4:df["S16_picked"][ind], 
@@ -542,7 +542,7 @@ class NodeGame(Game, NodeMixin):
       team = teams[0]
       # if there was no play in game, increment round one win total to keep it aligned
       if round_number == 2:
-        team.wins[1] += 1
+        team.wins[1]  = bracket.number_simulations
     else:
       if teams[0].name == winner.name:
         team = teams[0]
@@ -628,19 +628,19 @@ print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 b = model.output_most_popular_picks()
 print(RenderTree(b.bracket, style=AsciiStyle()))
 
-# b = model.export_teams_to_json()
-c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
-e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
+b = model.export_teams_to_json()
+# c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
+# e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
 # k = model.start_bracket.export_bracket_to_json(model.start_bracket.bracket, "start bracket")
 d = Entry(method="simulation", source=c)
 f = Entry(method="simulation", source=e)
 # g = Entry(method="simulation", source=k)
 
-with open('egsgs.csv', 'w', newline='') as csvfile:
-    spamwriter = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    spamwriter.writerow(g.scores)
+# with open('egsgs.csv', 'w', newline='') as csvfile:
+#     spamwriter = csv.writer(csvfile, delimiter=',',
+#                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
+#     spamwriter.writerow(g.scores)
 
-t = time.time() - t
-print(t)
+# t = time.time() - t
+# print(t)
 # e = Entry()
