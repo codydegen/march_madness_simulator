@@ -60,7 +60,7 @@ def scrape_data_for_entries(db, ip_addresses):
     current = db.cursor()
     select_table_query = ''' SELECT *  FROM entries 
                              LEFT OUTER JOIN picks ON picks.entry_id = entries.id
-                             WHERE picks.team_id IS NULL;'''
+                             WHERE picks.team_id IS NULL AND entries.espn_score <> 0;'''
     current.execute(select_table_query)
     valid_keys = current.fetchall()
   # establish a proxy
@@ -70,31 +70,33 @@ def scrape_data_for_entries(db, ip_addresses):
       proxy_index = random.randint(0, len(ip_addresses) - 1)
       proxies = {"http": ip_addresses[proxy_index], 
               "https": ip_addresses[proxy_index]}
+      # implement here what to do when there’s a connection error
+      # for example: remove the used proxy from the pool and retry the request using another one
+      page = requests.get(url, proxies=proxies)
+      soup = BeautifulSoup(page.content, 'html.parser')
+      entry_id = key[0]
+      user_picked_teams = soup.select(".selectedToAdvance")
+      user_groups = soup.select(".user-entries-entry-groups")
+      username = soup.select(".profileLink")
+      entry_name = soup.select(".entry-details-entryname")
+      predicted_score_winner = soup.select("#t1")
+      predicted_score_loser = soup.select("#t2")
+      if(len(predicted_score_winner) > 0):
+        update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser)
+        user_id = add_user_to_database(db, username)
+        user_entry_id = add_user_entries_to_database(db, user_id, key)
+        add_other_user_brackets_to_database(db)
+        add_groups_and_group_entries_to_database(db, user_groups, entry_id)
+        add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
+        db.commit()
+        print("\n\ndata updated for entry "+str(entry_id))
+      else:
+        print("\n\nno bracket was filled out for entry"+str(entry_id))
+      # time.sleep(3)
     except:
-      print("proxy failed")
-    # implement here what to do when there’s a connection error
-    # for example: remove the used proxy from the pool and retry the request using another one
-    page = requests.get(url, proxies=proxies)
-    soup = BeautifulSoup(page.content, 'html.parser')
-    entry_id = key[0]
-    user_picked_teams = soup.select(".selectedToAdvance")
-    user_groups = soup.select(".user-entries-entry-groups")
-    username = soup.select(".profileLink")
-    entry_name = soup.select(".entry-details-entryname")
-    predicted_score_winner = soup.select("#t1")
-    predicted_score_loser = soup.select("#t2")
-    if(len(predicted_score_winner) > 0):
-      update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser)
-      user_id = add_user_to_database(db, username)
-      user_entry_id = add_user_entries_to_database(db, user_id, key)
-      add_other_user_brackets_to_database(db)
-      add_groups_and_group_entries_to_database(db, user_groups, entry_id)
-      add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
-      db.commit()
-      print("\n\ndata updated for entry "+str(entry_id))
-    else:
-      print("\n\nno bracket was filled out for entry"+str(entry_id))
-    time.sleep(3)
+      ip_addresses.pop(proxy_index)
+      print("proxy failed, remaining proxies: "+str(len(ip_addresses)))
+
 
 def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html):
   predicted_score_winner = predicted_score_winner_html[0].value
@@ -169,7 +171,7 @@ def add_groups_and_group_entries_to_database(db, user_groups, entry_id):
   # current = db.cursor()
   if len(user_groups[0].contents) == 3:
     group_list = user_groups[0].contents[2]
-    if group_list.attrs['class'][1] == "groupConsolidator":
+    if "groupConsolidator" in group_list.attrs['class']:
       for option in group_list.contents[1].contents:
         if not isinstance(option, str):
           if option.attrs["value"] != "":
@@ -180,7 +182,13 @@ def add_groups_and_group_entries_to_database(db, user_groups, entry_id):
           pass
       pass
     else:
-      assert False, "add text"
+      for group in user_groups[0].contents:
+        if group.name == "a":
+          group_id = group.attrs["href"].split("=")[1]
+          group_name = group.text.strip()
+          add_group_to_database(db, group_id, group_name)
+          add_group_entries_to_database(db, group_id, entry_id)
+      # assert False, "add text"
   elif len(user_groups[0].contents) == 4:
     for group in user_groups[0].contents:
       if group.name == "a":
@@ -281,7 +289,28 @@ def main():
   populate_teams_table(db, teams)
   # add_group_to_database(db, 2895266, "Highly Questionable!")
   # populate_entries_table(db, entries, 2895266)
-  ip_addresses = ["52.179.231.206:80", "52.179.231.206:80"]
+  # ip_addresses = ["52.179.231.206:80", 
+  #                 "52.179.231.206:80"]
+  ip_addresses = ["52.179.231.206:80", 
+                  "68.188.59.198:80",
+                  "50.206.25.111:80",
+                  "50.206.25.110:80",
+                  "50.206.25.104:80",
+                  "50.206.25.106:80",
+                  "50.206.25.107:80",
+                  "68.185.57.66:80",
+                  "206.127.88.18:80",
+                  "138.197.203.149:8080",
+                  "138.68.43.159:8080",
+                  "134.209.44.228:80",
+                  "52.179.231.206:80",
+                  "50.197.38.230:60724",
+                  "108.177.235.174:3128",
+                  "192.41.71.199:3128",
+                  "206.223.238.72:22871",
+                  "136.25.2.43:40017",
+                  "144.34.195.56:80"
+                  ]
   scrape_data_for_entries(db, ip_addresses)
   
 if __name__ == '__main__':
