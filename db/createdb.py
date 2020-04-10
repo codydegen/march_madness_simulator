@@ -56,14 +56,19 @@ def main(database):
                                       UNIQUE ON CONFLICT IGNORE
                                 );'''
 
-  sql_create_entries_table = ''' CREATE TABLE IF NOT EXISTS entries (
+  team_array = []
+  for i in range(1,69):
+
+    team_array.append(",\n team_"+str(i)+"_wins integer")
+
+  sql_create_entries_table = ''' CREATE TABLE IF NOT EXISTS entries_migrated (
                                     id integer PRIMARY KEY
                                       UNIQUE ON CONFLICT IGNORE,
                                     name text NOT NULL,
                                     espn_score integer,
                                     espn_percentile real,
                                     predicted_score_winner integer,
-                                    predicted_score_loser integer
+                                    predicted_score_loser integer'''+"".join(team_array)+'''
                                 );'''
 
   sql_create_groups_table = ''' CREATE TABLE IF NOT EXISTS groups (
@@ -119,4 +124,4 @@ def main(database):
     print("Error! cannot create the database connection.")
  
 if __name__ == '__main__':
-  main("m2019.db")
+  main("db/m2019.db")

@@ -272,9 +272,41 @@ def add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket,
   # if there are groups, populate the group entries table
   pass
 
+def migrate_entries_from_picks_to_entries(db):
+  # Get all data from current entries table
+  current = db.cursor()
+  entries_query = '''SELECT * FROM entries'''
+  entries_table = current.execute(entries_query).fetchall()
+  
+  team_array = []
+  for i in range(1,69):
+    team_array.append("team_"+str(i)+"_wins")
+
+  # port it into entries migrated table
+  for entry in entries_table:
+    picks_query = '''SELECT * FROM  picks WHERE entry_id = ?'''
+    picks_table = current.execute(picks_query, tuple([entry[0]])).fetchall()
+
+    picks_data = [entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]]
+    for p in picks_table:
+      picks_data.append(p[3])
+    if len(picks_table) == 0:
+      entry_query = '''INSERT OR IGNORE INTO entries_migrated (id, name, espn_score, espn_percentile, predicted_score_winner, predicted_score_loser)
+                        VALUES (?'''+",?"*(len(picks_data)-1)+''')'''
+    else:
+      entry_query = '''INSERT OR IGNORE INTO entries_migrated (id, name, espn_score, espn_percentile, predicted_score_winner, predicted_score_loser,'''+", ".join(team_array)+''')
+                          VALUES (?'''+",?"*(len(picks_data)-1)+''')'''
+    entry_data = tuple(picks_data)
+    current.execute(entry_query, entry_data)
+    db.commit()
+    print("commited entry ID "+str(entry[0]))
+  
+  # Iterate through pics table and add pics to entries
+  pass
+
 def main():
   team_data = r'..\\team_data\\team_m2019_20200407_0840.json'
-  entries_data = r'..\\scraped_brackets\\2019\\bracket_results\\hq_consolidated.json'
+  entries_data = r'..\\web_scraper\\m2019\\bracket_results\\hq_consolidated.json'
   
 
   current_path = os.path.dirname(__file__)
@@ -286,7 +318,8 @@ def main():
 
   database_string = r"db\\m2019.db"
   db = sqlite3.connect(database_string)
-  populate_teams_table(db, teams)
+  migrate_entries_from_picks_to_entries(db)
+  # populate_teams_table(db, teams)
   # add_group_to_database(db, 2895266, "Highly Questionable!")
   # populate_entries_table(db, entries, 2895266)
   ip_addresses = ["52.179.231.206:80", 
@@ -311,7 +344,7 @@ def main():
   #                 "136.25.2.43:40017",
   #                 "144.34.195.56:80"
   #                 ]
-  scrape_data_for_entries(db, ip_addresses)
+  # scrape_data_for_entries(db, ip_addresses)
   
 if __name__ == '__main__':
     main()
