@@ -1,6 +1,8 @@
 # Database (too large)
 *.db
-db/m2019.db
+
+# testing files
+test_files/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

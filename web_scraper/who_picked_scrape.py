@@ -91,7 +91,7 @@ def get_who_picked(dataset):
   df=pd.DataFrame(Dict)
   df.head()
 
-  df.to_csv("data/"+str(dataset["year"])+"_"+dataset["gender"]+"_who_picked.csv", index=False)
+  df.to_csv("../team_data/"+str(dataset["year"])+"_"+dataset["gender"]+"_who_picked.csv", index=False)
   print("written")
 
 get_who_picked(espn_2018_men)

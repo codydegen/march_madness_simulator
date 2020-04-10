@@ -1,4 +1,4 @@
-import ds
+import web_scrape_to_json as ds
 
 # http://free-proxy.cz/en/proxylist/country/US/http/ping/all
 PROXY = "156.96.118.58:3128"
@@ -9,7 +9,8 @@ tournamentChallenge_2019 = {
   "savepath": "Tournament_challenge_2019",
   "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=196060",
   "groupsize": "100,000+",
-  "year": 2019
+  "year": 2019,
+  "prefix" : "tc"
 }
 
 sportsCenter_2019 = {
@@ -17,7 +18,8 @@ sportsCenter_2019 = {
   "savepath": "ESPN_sportscenter_2019",
   "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=1041234",
   "groupsize": "1,000,000+",
-  "year": 2019
+  "year": 2019,
+  "prefix" : "sc"
 }
 
 highlyQuestionable_2019 = {
@@ -25,11 +27,12 @@ highlyQuestionable_2019 = {
   "savepath": "Highly_questionable_2019",
   "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=2895266",
   "groupsize": "29,000+",
-  "year": 2019
+  "year": 2019,
+  "prefix" : "hq"
 }
 
 # dst = ds.TopLevelScrape()
-# dst.main(PROXY, sportsCenter_2019)
+# dst.main(PROXY, sportsCenter_2019, "m")
 
 b = ds.BracketScrape()
-b.pass_to_consolidated(PROXY, highlyQuestionable_2019)
+b.pass_to_consolidated(PROXY, highlyQuestionable_2019, "m")

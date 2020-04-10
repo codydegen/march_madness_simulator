@@ -116,7 +116,7 @@ class TopLevelScrape:
     time.sleep(1)
     return str(tbpn)
 
-  def main(self, PROXY, dataset):
+  def main(self, PROXY, dataset, gender):
     webdriver.DesiredCapabilities.CHROME['proxy']={
         "httpProxy":PROXY,
         "ftpProxy":PROXY,
@@ -128,7 +128,7 @@ class TopLevelScrape:
     driver = webdriver.Chrome()
     driver.get(dataset["webaddress"])
     time.sleep(4)
-    path = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]
+    path = gender+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]
     unused = self.findMissing(path)
     for missingSheet in unused:
       pageNum = self.gotoPage(driver, missingSheet)
@@ -161,7 +161,7 @@ class BracketScrape:
   def __init__(self):
     pass
   
-  def pass_to_consolidated(self, PROXY, dataset):
+  def pass_to_consolidated(self, PROXY, dataset, gender):
     webdriver.DesiredCapabilities.CHROME['proxy']={
         "httpProxy":PROXY,
         "ftpProxy":PROXY,
@@ -172,10 +172,10 @@ class BracketScrape:
     }
     # driver = webdriver.Chrome()
     # driver.get(dataset["webaddress"])
-    path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
+    path_open = gender+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
     # path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/test/"
 
-    path_consolidated = "scraped_brackets/"+str(dataset["year"])+"/bracket_results/hq_"
+    path_consolidated = gender+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
     open_file = open(path_consolidated+"consolidated.json", "a")
     c = {}
     for filename in os.listdir(path_open):
@@ -197,27 +197,16 @@ class BracketScrape:
     json.dump(c, open_file)
     print("file ")
 
-  def open_consolidated(self, PROXY, dataset):
-    path_consolidated = "scraped_brackets/2019/bracket_results/hq_"
+  def open_consolidated(self, PROXY, dataset, gender):
+    path_consolidated = gender+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
     open_file = open(path_consolidated+"consolidated.json", "r")
     d = json.load(open_file)
     open_file.close()
-    empty_bracket = open("scraped_brackets/2019/empty.json", "r")
-    reverse_lookup_file = open("scraped_brackets/2019/reverse_lookup.json", "r")
+    empty_bracket = open(gender+str(dataset["year"])+"/empty.json", "r")
+    reverse_lookup_file = open(gender+str(dataset["year"])+"/reverse_lookup.json", "r")
     eb = json.load(empty_bracket)
     reverse_bracket = json.load(reverse_lookup_file)
 
-
-
-    # for region in team_picks:
-    #   for seed in team_picks[region]:
-    #     for team in team_picks[region][seed]:
-    #       reverse_bracket[team] = {
-    #         "region" : region,
-    #         "seed" : seed,
-    #         "team" : team
-    #       }
-    # b = json.dumps(reverse_bracket)
     webdriver.DesiredCapabilities.CHROME['proxy']={
         "httpProxy":PROXY,
         "ftpProxy":PROXY,
