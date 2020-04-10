@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import time
 
 def populate_teams_table(db, teams):
+  # Add teams table
   columns = ["name", "region", "seed", "elo", "pick_rate_1", "pick_rate_2", "pick_rate_3", "pick_rate_4", "pick_rate_5", "pick_rate_6", "pick_rate_7"]
   with db:
     current = db.cursor()
@@ -28,13 +29,12 @@ def populate_teams_table(db, teams):
           current.execute(query, data)
 
 def populate_entries_table(db, entries, group_id):
-  print("populating bracket")
+  print("populating entries table")
   with db:
     current = db.cursor()
     for entry in entries:
       add_entries_to_database(db, entry)
       add_group_entries_to_database(db, group_id, entry)
-      # print(entry)
     db.commit()
 
 def add_entries_to_database(db, entry):
@@ -70,8 +70,7 @@ def scrape_data_for_entries(db, ip_addresses):
       proxy_index = random.randint(0, len(ip_addresses) - 1)
       proxies = {"http": ip_addresses[proxy_index], 
               "https": ip_addresses[proxy_index]}
-      # implement here what to do when there’s a connection error
-      # for example: remove the used proxy from the pool and retry the request using another one
+
       page = requests.get(url, proxies=proxies)
       soup = BeautifulSoup(page.content, 'html.parser')
       entry_id = key[0]
@@ -91,7 +90,7 @@ def scrape_data_for_entries(db, ip_addresses):
         db.commit()
         print("\n\ndata updated for entry "+str(entry_id))
       else:
-        print("\n\nno bracket was filled out for entry"+str(entry_id))
+        print("\n\nno bracket was filled out for entry "+str(entry_id))
       # time.sleep(3)
     except:
       ip_addresses.pop(proxy_index)
@@ -113,21 +112,17 @@ def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, pre
   confirm_query = '''SELECT * FROM entries
                       WHERE id = ?'''
   validation_data = tuple([entry_id])
-  validation = current.execute(confirm_query, validation_data).fetchall()
-  # print(validation)
-  # db.commit()
   return entry_id
 
 def add_user_to_database(db, username_html):
+  # Add users into the database
   assert len(username_html) == 1, " more than one username name been identified"
   name = username_html[0].text
-
   current = db.cursor()
   query = '''INSERT OR IGNORE INTO users (name) 
                   VALUES (?);'''
   data = tuple([name])
   current.execute(query, data)
-  # db.commit()
   last_id = current.lastrowid
   if last_id == 0:
     print(" user already in users table")
@@ -140,7 +135,7 @@ def add_user_to_database(db, username_html):
     return last_id 
 
 def add_user_entries_to_database(db, user_id, entry):
-  # assert len(username_html) == 1, " more than one username name been identified"
+  # Connect user IDs to entry IDs
   current = db.cursor()
   entry_id = entry[0]
   query = '''INSERT OR IGNORE INTO user_entries (id, user_id, entry_id)
@@ -158,7 +153,7 @@ def add_user_entries_to_database(db, user_id, entry):
     validation = current.execute(validation_query, tuple([new_id]))
     return validation
   else:
-    print("new entry, ID is "+str(last_id))
+    print("new user, ID is "+str(last_id))
     return last_id 
 
   
@@ -168,11 +163,16 @@ def add_other_user_brackets_to_database(db):
   pass
 
 def add_groups_and_group_entries_to_database(db, user_groups, entry_id):
-  # current = db.cursor()
+  # This might be a place to eventually refactor code to be a little bit cleaner.
+  # user_groups is the element that shows the list of groups. It can be in various forms ( single element, list of elements, drop-down menu)
+  # And as such needs to be processed slightly differently.
+
+  # Code block for if it's a drop-down menu
   if len(user_groups[0].contents) == 3:
     group_list = user_groups[0].contents[2]
     if "groupConsolidator" in group_list.attrs['class']:
       for option in group_list.contents[1].contents:
+        # Some of the instances are empty strings, this removes that
         if not isinstance(option, str):
           if option.attrs["value"] != "":
             group_id = option.attrs["value"].split("=")[1]
@@ -212,7 +212,8 @@ def add_group_to_database(db, group_id, group_name):
   query = '''INSERT OR IGNORE INTO groups (id, name) VALUES (?,?);'''
   current.execute(query, data)
   db.commit()
-  print(" adding group "+str(group_name)+" with group ID "+str(group_id))
+  if current.lastrowid == group_id:
+    print(" adding group "+str(group_name)+" with group ID "+str(group_id))
   return group_id
 
 def add_group_entries_to_database(db, group_id, entry_id):
@@ -272,7 +273,6 @@ def add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket,
   pass
 
 def main():
-  # dataFolder = os.path.relpath(r"C:/Users/Cody/Documents/Projects/march_madness/team_data/team_m2019_20200407_0840.json",r"C:/Users/Cody/Documents/Projects/march_madness/db")
   team_data = r'..\\team_data\\team_m2019_20200407_0840.json'
   entries_data = r'..\\scraped_brackets\\2019\\bracket_results\\hq_consolidated.json'
   
@@ -289,28 +289,28 @@ def main():
   populate_teams_table(db, teams)
   # add_group_to_database(db, 2895266, "Highly Questionable!")
   # populate_entries_table(db, entries, 2895266)
-  # ip_addresses = ["52.179.231.206:80", 
-  #                 "52.179.231.206:80"]
   ip_addresses = ["52.179.231.206:80", 
-                  "68.188.59.198:80",
-                  "50.206.25.111:80",
-                  "50.206.25.110:80",
-                  "50.206.25.104:80",
-                  "50.206.25.106:80",
-                  "50.206.25.107:80",
-                  "68.185.57.66:80",
-                  "206.127.88.18:80",
-                  "138.197.203.149:8080",
-                  "138.68.43.159:8080",
-                  "134.209.44.228:80",
-                  "52.179.231.206:80",
-                  "50.197.38.230:60724",
-                  "108.177.235.174:3128",
-                  "192.41.71.199:3128",
-                  "206.223.238.72:22871",
-                  "136.25.2.43:40017",
-                  "144.34.195.56:80"
-                  ]
+                  "52.179.231.206:80"]
+  # ip_addresses = ["52.179.231.206:80", 
+  #                 "68.188.59.198:80",
+  #                 "50.206.25.111:80",
+  #                 "50.206.25.110:80",
+  #                 "50.206.25.104:80",
+  #                 "50.206.25.106:80",
+  #                 "50.206.25.107:80",
+  #                 "68.185.57.66:80",
+  #                 "206.127.88.18:80",
+  #                 "138.197.203.149:8080",
+  #                 "138.68.43.159:8080",
+  #                 "134.209.44.228:80",
+  #                 "52.179.231.206:80",
+  #                 "50.197.38.230:60724",
+  #                 "108.177.235.174:3128",
+  #                 "192.41.71.199:3128",
+  #                 "206.223.238.72:22871",
+  #                 "136.25.2.43:40017",
+  #                 "144.34.195.56:80"
+  #                 ]
   scrape_data_for_entries(db, ip_addresses)
   
 if __name__ == '__main__':
