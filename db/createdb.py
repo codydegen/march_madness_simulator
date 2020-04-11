@@ -61,7 +61,7 @@ def main(database):
 
     team_array.append(",\n team_"+str(i)+"_wins integer")
 
-  sql_create_entries_table = ''' CREATE TABLE IF NOT EXISTS entries_migrated (
+  sql_create_entries_table = ''' CREATE TABLE IF NOT EXISTS entries (
                                     id integer PRIMARY KEY
                                       UNIQUE ON CONFLICT IGNORE,
                                     name text NOT NULL,

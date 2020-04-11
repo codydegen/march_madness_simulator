@@ -33,11 +33,11 @@ def populate_entries_table(db, entries, group_id):
   with db:
     current = db.cursor()
     for entry in entries:
-      add_entries_to_database(db, entry)
+      add_entries_to_database(db, entry, entries)
       add_group_entries_to_database(db, group_id, entry)
     db.commit()
 
-def add_entries_to_database(db, entry):
+def add_entries_to_database(db, entry, entries):
   current = db.cursor()
   entry_query = '''INSERT OR IGNORE INTO entries (id, name, espn_score, espn_percentile) 
                                   VALUES (?,?,?,?);'''
@@ -50,8 +50,8 @@ def add_entries_to_database(db, entry):
 def scrape_data_for_entries(db, ip_addresses):
   # take key from database
   current_path = os.path.dirname(__file__)
-  empty_bracket_file = open(os.path.join(current_path, r"..\\scraped_brackets\\2019\\empty.json"), "r")
-  reverse_lookup_file = open(os.path.join(current_path, r"..\\scraped_brackets\\2019\\reverse_lookup.json"), "r")
+  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\m2019\\empty.json"), "r")
+  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\m2019\\reverse_lookup.json"), "r")
   reverse_bracket = json.load(reverse_lookup_file)
   empty_bracket = json.load(empty_bracket_file)
 
@@ -59,8 +59,7 @@ def scrape_data_for_entries(db, ip_addresses):
   with db:
     current = db.cursor()
     select_table_query = ''' SELECT *  FROM entries 
-                             LEFT OUTER JOIN picks ON picks.entry_id = entries.id
-                             WHERE picks.team_id IS NULL AND entries.espn_score <> 0;'''
+                             WHERE name = 'NULL' AND entries.espn_score <> 0;'''
     current.execute(select_table_query)
     valid_keys = current.fetchall()
   # establish a proxy
@@ -81,33 +80,37 @@ def scrape_data_for_entries(db, ip_addresses):
       predicted_score_winner = soup.select("#t1")
       predicted_score_loser = soup.select("#t2")
       if(len(predicted_score_winner) > 0):
-        update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser)
+        wins_array = get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
+        update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser, wins_array)
         user_id = add_user_to_database(db, username)
         user_entry_id = add_user_entries_to_database(db, user_id, key)
         add_other_user_brackets_to_database(db)
         add_groups_and_group_entries_to_database(db, user_groups, entry_id)
-        add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
         db.commit()
         print("\n\ndata updated for entry "+str(entry_id))
       else:
         print("\n\nno bracket was filled out for entry "+str(entry_id))
-      # time.sleep(3)
+        # time.sleep(3)
     except:
       ip_addresses.pop(proxy_index)
       print("proxy failed, remaining proxies: "+str(len(ip_addresses)))
 
 
-def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html):
-  predicted_score_winner = predicted_score_winner_html[0].value
-  predicted_score_loser = predicted_score_loser_html[0].value
+def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html, wins_array):
+  predicted_score_winner = int(predicted_score_winner_html[0].attrs['value'])
+  predicted_score_loser = int(predicted_score_loser_html[0].attrs['value'])
   entry_id = entry[0]
   assert len(entry_html) == 1, " more than one entry name been identified"
   entry_name = entry_html[0].text
   current = db.cursor()
+  team_array = []
+  for i in range(1,69):
+    team_array.append(", team_"+str(i)+"_wins = ?")
   query = '''UPDATE entries
-              SET name = ?, predicted_score_winner = ?, predicted_score_loser = ?
+              SET name = ?, predicted_score_winner = ?, predicted_score_loser = ? '''+"".join(team_array)+'''
               WHERE id = ?'''
-  data = (entry_name, predicted_score_winner, predicted_score_loser, entry_id)
+  data = [entry_name, predicted_score_winner, predicted_score_loser] + wins_array + [entry_id]
+  data = tuple(data)
   current.execute(query, data)
   confirm_query = '''SELECT * FROM entries
                       WHERE id = ?'''
@@ -225,8 +228,14 @@ def add_group_entries_to_database(db, group_id, entry_id):
   current.execute(group_entries_query, group_entries_data)
   return group_entries_id
 
-def add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id):
+def get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id):
   
+  team_array = []
+  for i in range(1,69):
+    team_array.append("team_"+str(i)+"_wins")
+  
+
+
   # team_picks = json.load(empty_bracket)
   team_picks = json.loads(json.dumps(empty_bracket))
   for game in user_picked_teams:
@@ -246,31 +255,17 @@ def add_picks_to_database(db, user_picked_teams, empty_bracket, reverse_bracket,
   current = db.cursor()
   team_query = '''SELECT * FROM teams;'''
   team_table = current.execute(team_query).fetchall()
+
+  wins_array = []
   for team in team_table:
-    team_id = team[0]
-    pick_id = "e"+str(entry_id)+"t"+str(team_id)
-    wins = team_picks[team[2]][str(team[3])][team[1]]
-    picks_query = '''INSERT OR IGNORE INTO picks (id, entry_id, team_id, wins) 
-                          VALUES (?,?,?,?)'''
-    picks_data = (pick_id, entry_id, team_id, wins)
-    current.execute(picks_query, picks_data)
-  
-    # if team in team_picks.keys():
-    #   if team_picks[team] < 7:
-    #     team_picks[team] += 1
-    # else:
-    #   team_picks[team] = 2
+    # team_id = team[0]
+    wins_array.append(team_picks[team[2]][str(team[3])][team[1]])
+    # picks_query = '''INSERT OR IGNORE INTO picks (id, entry_id, team_id, wins) 
+    #                       VALUES (?,?,?,?)'''
+    # picks_data = (pick_id, entry_id, team_id, wins)
+    # current.execute(picks_query, picks_data)
+  return wins_array  
 
-
-
-  # if not, scrape the webpage associated with this bracket
-
-  # add pics to the pics table
-
-  # if there are groups add them to the groups table
-
-  # if there are groups, populate the group entries table
-  pass
 
 def migrate_entries_from_picks_to_entries(db):
   # Get all data from current entries table
@@ -306,7 +301,7 @@ def migrate_entries_from_picks_to_entries(db):
 
 def main():
   team_data = r'..\\team_data\\team_m2019_20200407_0840.json'
-  entries_data = r'..\\web_scraper\\m2019\\bracket_results\\hq_consolidated.json'
+  entries_data = r'..\\web_scraper\\m2019\\bracket_results\\sc_consolidated.json'
   
 
   current_path = os.path.dirname(__file__)
@@ -318,33 +313,33 @@ def main():
 
   database_string = r"db\\m2019.db"
   db = sqlite3.connect(database_string)
-  migrate_entries_from_picks_to_entries(db)
+  # migrate_entries_from_picks_to_entries(db)
   # populate_teams_table(db, teams)
   # add_group_to_database(db, 2895266, "Highly Questionable!")
-  # populate_entries_table(db, entries, 2895266)
-  ip_addresses = ["52.179.231.206:80", 
-                  "52.179.231.206:80"]
+  # populate_entries_table(db, entries, 1041234)
   # ip_addresses = ["52.179.231.206:80", 
-  #                 "68.188.59.198:80",
-  #                 "50.206.25.111:80",
-  #                 "50.206.25.110:80",
-  #                 "50.206.25.104:80",
-  #                 "50.206.25.106:80",
-  #                 "50.206.25.107:80",
-  #                 "68.185.57.66:80",
-  #                 "206.127.88.18:80",
-  #                 "138.197.203.149:8080",
-  #                 "138.68.43.159:8080",
-  #                 "134.209.44.228:80",
-  #                 "52.179.231.206:80",
-  #                 "50.197.38.230:60724",
-  #                 "108.177.235.174:3128",
-  #                 "192.41.71.199:3128",
-  #                 "206.223.238.72:22871",
-  #                 "136.25.2.43:40017",
-  #                 "144.34.195.56:80"
-  #                 ]
-  # scrape_data_for_entries(db, ip_addresses)
+                  # "52.179.231.206:80"]
+  ip_addresses = ["52.179.231.206:80", 
+                  "68.188.59.198:80",
+                  "50.206.25.111:80",
+                  "50.206.25.110:80",
+                  "50.206.25.104:80",
+                  "50.206.25.106:80",
+                  "50.206.25.107:80",
+                  "68.185.57.66:80",
+                  "206.127.88.18:80",
+                  "138.197.203.149:8080",
+                  "138.68.43.159:8080",
+                  "134.209.44.228:80",
+                  "52.179.231.206:80",
+                  "50.197.38.230:60724",
+                  "108.177.235.174:3128",
+                  "192.41.71.199:3128",
+                  "206.223.238.72:22871",
+                  "136.25.2.43:40017",
+                  "144.34.195.56:80"
+                  ]
+  scrape_data_for_entries(db, ip_addresses)
   
 if __name__ == '__main__':
     main()
