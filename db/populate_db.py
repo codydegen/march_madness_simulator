@@ -50,8 +50,8 @@ def add_entries_to_database(db, entry, entries):
 def scrape_data_for_entries(db, ip_addresses):
   # take key from database
   current_path = os.path.dirname(__file__)
-  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\m2019\\empty.json"), "r")
-  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\m2019\\reverse_lookup.json"), "r")
+  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2019\\empty.json"), "r")
+  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2019\\reverse_lookup.json"), "r")
   reverse_bracket = json.load(reverse_lookup_file)
   empty_bracket = json.load(empty_bracket_file)
 
@@ -300,8 +300,8 @@ def migrate_entries_from_picks_to_entries(db):
   pass
 
 def main():
-  team_data = r'..\\team_data\\team_m2019_20200407_0840.json'
-  entries_data = r'..\\web_scraper\\m2019\\bracket_results\\sc_consolidated.json'
+  team_data = r'..\\team_data\\team_mens2019_20200407_0840.json'
+  entries_data = r'..\\web_scraper\\mens2019\\bracket_results\\sc_consolidated.json'
   
 
   current_path = os.path.dirname(__file__)
@@ -311,7 +311,7 @@ def main():
   teams = json.load(open(new_team_data, "r"))
   entries = json.load(open(new_entries_data, "r"))
 
-  database_string = r"db\\m2019.db"
+  database_string = r"db\\mens2019.db"
   db = sqlite3.connect(database_string)
   # migrate_entries_from_picks_to_entries(db)
   # populate_teams_table(db, teams)
