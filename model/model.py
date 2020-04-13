@@ -615,32 +615,23 @@ class Entry:
   def import_bracket_url(self, source):
     pass
 
+def main():
+
+  # t=time.time()
+  model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+  model.batch_simulate()
+  # t = time.time() - t
+  a = model.output_most_valuable_team()
+  # print(t)
+  print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
+
+  b = model.output_most_popular_picks()
+  print(RenderTree(b.bracket, style=AsciiStyle()))
+
+  b = model.export_teams_to_json()
+  d = Entry(method="simulation", source=c)
+  f = Entry(method="simulation", source=e)
 
 
-t=time.time()
-model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
-model.batch_simulate()
-# t = time.time() - t
-a = model.output_most_valuable_team()
-# print(t)
-print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
-
-b = model.output_most_popular_picks()
-print(RenderTree(b.bracket, style=AsciiStyle()))
-
-b = model.export_teams_to_json()
-# c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
-# e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
-# k = model.start_bracket.export_bracket_to_json(model.start_bracket.bracket, "start bracket")
-d = Entry(method="simulation", source=c)
-f = Entry(method="simulation", source=e)
-# g = Entry(method="simulation", source=k)
-
-# with open('egsgs.csv', 'w', newline='') as csvfile:
-#     spamwriter = csv.writer(csvfile, delimiter=',',
-#                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#     spamwriter.writerow(g.scores)
-
-# t = time.time() - t
-# print(t)
-# e = Entry()
+if __name__ == '__main__':
+  main()
