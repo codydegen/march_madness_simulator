@@ -11,6 +11,7 @@ import time
 import json
 import queue
 import csv
+import sqlite3
 
 
 final_four_pairings = {
@@ -275,17 +276,40 @@ class Model:
     self.imported_brackets.append(entry)
     self.update_entry_score(entry)
 
+  def add_bulk_entries_from_database(self, number_entries):
+    current_path = os.path.dirname(__file__)
+    database = r"..\\db\\"+self.gender+str(self.year)+".db"
+    database_path = os.path.join(current_path, database)
+    db = sqlite3.connect(database_path)
+    current = db.cursor()
+    pull_query = '''SELECT * FROM entries 
+                      WHERE id IN 
+                      (SELECT id FROM entries 
+                      WHERE name <> 'NULL' 
+                      ORDER BY RANDOM() 
+                      LIMIT ?) '''
+    data = tuple([number_entries])
+    bulk_entries = current.execute(pull_query, data).fetchall()
+    for entry in bulk_entries:
+      # I don't feel great about the formatting of this, trying to think of a better structure
+      self.add_entry(Entry(method="database", source=entry))
+
+
   def update_entry_score(self, entry):
+    print('team name, sim results, entry results')
     for region in self.all_teams:
       for seed in self.all_teams[region]:
         for team in self.all_teams[region][seed]:
           while len(team.entry_picks) < entry.index+1:
             team.entry_picks.append(-1)
           team.entry_picks[entry.index] = entry.team_picks[team.region][team.seed][team.name]
+          # print(team.name, team.simulation_results[0], )
           for i in range(0, len(team.simulation_results)):
             if len(entry.scores) <= i:
               entry.scores.append(0)
             entry.scores[i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks[entry.index])]
+          print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
+          entry
     pass
 
 
@@ -308,7 +332,7 @@ class Bracket:
     pass
 
   def create_bracket(self):
-    finals = NodeGame(region="Finals")
+    finals = NodeGame(region="Finals")#, model=self.model)
     for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
       finals.add_child(self.add_semis(ff_pairings))
     return finals
@@ -490,6 +514,7 @@ class NodeGame(Game, NodeMixin):
     self.team_one = team_one
     self.team_two = team_two
     self.parent = parent
+    # self.model = model
     if parent:
       self.round_num = parent.round_num - 1
     else:
@@ -595,43 +620,71 @@ class Entry:
     
     elif method == "url":
       self.import_bracket_url(source)
+    elif method == "database":
+      self.import_bracket_database(source)
     else:
       raise Exception("unknown method designated for bracket creation")
       # self.bracket = create_bracket()
     
     self.index = 0
     self.scores = []
-    model.add_entry(self)
+    # model.add_entry(self)
 
   def import_bracket_json(self, source):
     b = json.loads(source)
-    self.team_picks = b["team_picks"]
+    self.name = b["name"]
     self.entryID = b["entryID"]
     self.method = b["method"]
     self.team_picks = b["team_picks"]
     self.source = b["source"]
     pass
 
-  def import_bracket_url(self, source):
+  def import_bracket_database(self, source):
+
+
+    self.name = source[1]
+    self.team_picks = self.assign_team_picks_from_database(source) 
+    self.entryID = source[0]
+    self.method = "database"
     pass
 
-def main():
+  def assign_team_picks_from_database(self, source):
+    team_data = r'..\\team_data\\team_'+model.gender+str(model.year)+'_20200407_0840.json'
+    current_path = os.path.dirname(__file__)
+    new_team_data = os.path.join(current_path, team_data)
+    teams = json.load(open(new_team_data, "r"))
+    i=6
+    team_picks = {}
+    for region in teams:
+      team_picks[region] = {}
+      for seed in teams[region]:
+        team_picks[region][seed] = {}
+        for team in teams[region][seed]:
+          team_picks[region][seed][team["name"]] = source[i]
+          i += 1
+    return team_picks
 
-  # t=time.time()
-  model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
-  model.batch_simulate()
-  # t = time.time() - t
-  a = model.output_most_valuable_team()
-  # print(t)
-  print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
-
-  b = model.output_most_popular_picks()
-  print(RenderTree(b.bracket, style=AsciiStyle()))
-
-  b = model.export_teams_to_json()
-  d = Entry(method="simulation", source=c)
-  f = Entry(method="simulation", source=e)
 
 
-if __name__ == '__main__':
-  main()
+# def main():
+
+# t=time.time()
+model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+model.batch_simulate()
+model.add_bulk_entries_from_database(10)
+# t = time.time() - t
+a = model.output_most_valuable_team()
+b = model.output_most_popular_picks()
+# print(t)
+print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
+c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
+e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
+print(RenderTree(b.bracket, style=AsciiStyle()))
+b = model.export_teams_to_json()
+d = Entry(method="simulation", source=c)
+
+f = Entry(method="simulation", source=e)
+
+
+# if __name__ == '__main__':
+#   main()
