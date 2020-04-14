@@ -243,35 +243,62 @@ class Model:
           print(team.name+" expected points: "+str(team.total_expected_points))
     pass
 
-  def output_most_valuable_team(self):
+  def output_most_valuable_bracket(self):
     # (TD) this can be exported into JSON format without going into the intermediate bracket step
     self.calculate_expected_points()
     most_valuable_bracket = Bracket(self)
     self.postprocess_bracket(most_valuable_bracket, "expected_points")
     return most_valuable_bracket
 
-  def output_most_popular_picks(self):
+  def output_most_popular_bracket(self):
     # (TD) this can be exported into JSON format without going into the intermediate bracket step
     # self.calculate_expected_points()
     most_popular_bracket = Bracket(self)
     self.postprocess_bracket(most_popular_bracket, "picked_frequency")
     return most_popular_bracket
 
-  def import_actual_results(self):
+  def update_entry_picks(self):
     team_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\actual.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
     actual_results = json.load(open(new_team_data, "r"))
+
+
+
     for region in actual_results:
       for seed in actual_results[region]:
         for team in actual_results[region][seed]:
           if self.all_teams[region][seed][0].name == team:
             self.all_teams[region][seed][0].entry_picks["actual_results"] = actual_results[region][seed][team]
+            self.all_teams[region][seed][0].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
+            self.all_teams[region][seed][0].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
           else:
             self.all_teams[region][seed][1].entry_picks["actual_results"] = actual_results[region][seed][team]
+            self.all_teams[region][seed][1].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
+            self.all_teams[region][seed][1].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
     # actual_results = Bracket(self)
-    # self.import_actual_results(actual_results)
+    # self.update_entry_picks(actual_results)
+    entry = {
+      "team_picks" : actual_results,
+    }
+    entry["name"] = "Actual results"
+    entry["entryID"] = -1
+    entry["method"] = "Actual results"
+    entry["source"] = "Actual results"
+    self.entries["actual_results"] = Entry(source=json.dumps(entry), method="simulation")
     # return actual_results
+
+  def postprocess(self):
+    # Add most valuable and most picked brackets
+    most_valuable_bracket = self.output_most_valuable_bracket()
+    most_popular_bracket = self.output_most_popular_bracket()
+    mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
+    mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="simulation")
+    self.entries["most_popular_teams"] = Entry(source=mpb_source, method="simulation")
+    self.update_entry_picks()
+
+    pass
 
   def prep_data(self, path):
     # placeholder function for now
@@ -706,12 +733,13 @@ class Entry:
 # t=time.time()
 model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
-model.import_actual_results()
+# model.update_entry_picks()
+model.postprocess()
 model.add_bulk_entries_from_database(10)
 
 # t = time.time() - t
-a = model.output_most_valuable_team()
-b = model.output_most_popular_picks()
+a = model.output_most_valuable_bracket()
+b = model.output_most_popular_bracket()
 # print(t)
 print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
 c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
