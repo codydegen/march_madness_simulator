@@ -134,7 +134,8 @@ class Model:
       "imported_entries": [],
       "actual_results": None,
       "most_valuable_teams": None,
-      "most_popular_teams": None
+      "most_popular_teams": None,
+      "chalk": None,
     }
     pass
 
@@ -259,9 +260,12 @@ class Model:
 
   def update_entry_picks(self):
     team_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\actual.json'
+    chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
+    chalk_team_data = os.path.join(current_path, chalk_data)
     actual_results = json.load(open(new_team_data, "r"))
+    chalk_results = json.load(open(chalk_team_data, "r"))
 
 
 
@@ -270,22 +274,34 @@ class Model:
         for team in actual_results[region][seed]:
           if self.all_teams[region][seed][0].name == team:
             self.all_teams[region][seed][0].entry_picks["actual_results"] = actual_results[region][seed][team]
+            self.all_teams[region][seed][0].entry_picks["chalk"] = chalk_results[region][seed][team]
             self.all_teams[region][seed][0].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
             self.all_teams[region][seed][0].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
           else:
             self.all_teams[region][seed][1].entry_picks["actual_results"] = actual_results[region][seed][team]
+            self.all_teams[region][seed][1].entry_picks["chalk"] = chalk_results[region][seed][team]
             self.all_teams[region][seed][1].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
             self.all_teams[region][seed][1].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
     # actual_results = Bracket(self)
     # self.update_entry_picks(actual_results)
     entry = {
       "team_picks" : actual_results,
+      "name" : "Actual results",
+      "entryID" : -1,
+      "method" : "Actual results",
+      "source" : "Actual results"
     }
-    entry["name"] = "Actual results"
-    entry["entryID"] = -1
-    entry["method"] = "Actual results"
-    entry["source"] = "Actual results"
+
+    chalk_entry = {
+      "team_picks" : chalk_results,
+      "name" : "Chalk entry",
+      "entryID" : -1,
+      "method" : "Chalk entry",
+      "source" : "Chalk entry"
+    }
+
     self.entries["actual_results"] = Entry(source=json.dumps(entry), method="simulation")
+    self.entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="simulation")
     # return actual_results
 
   def postprocess(self):
@@ -530,10 +546,11 @@ class Team:
     self.temp_result = 0
     self.total_expected_points = 0
     self.entry_picks = {
-      "imported_entries": [],
-      "actual_results": None,
-      "most_valuable_teams": None,
-      "most_popular_teams": None
+      "imported_entries" : [],
+      "actual_results" : None,
+      "most_valuable_teams" : None,
+      "most_popular_teams" : None,
+      "chalk" : None
     }
     pass
 
@@ -685,10 +702,11 @@ class Entry:
     
     self.index = 0
     self.scores = {
-      "simulations": [],
-      "actual_results": 0,
-      "most_valuable_teams": 0,
-      "most_popular_teams": 0
+      "simulations" : [],
+      "actual_results" : 0,
+      "most_valuable_teams" : 0,
+      "most_popular_teams" : 0,
+      "chalk" : 0
     }
     # model.add_entry(self)
 
