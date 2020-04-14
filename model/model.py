@@ -724,6 +724,20 @@ class Entry:
           i += 1
     return team_picks
 
+class Simulation_results:
+  def __init__(self, model):
+    self.score_list = []
+    self.winning_score = 0
+    self.winning_index = 0
+    self.most_valuable_bracket_score = 0
+    self.most_popular_bracket_score = 0
+    self.number_of_entries = 0
+    self.beaten_by_most_valuable_bracket = False
+    self.beaten_by_most_popular_bracket = False
+    self.beaten_by_chalk = False
+
+
+
 
 # Holding a main function removes the global scoping I was using to call 
 # the model I'm scoring various brackets. I'd like to rearrange this in some way
