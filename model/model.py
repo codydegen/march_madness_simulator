@@ -34,7 +34,8 @@ final_four_pairings = {
   }
 }
 
-# different scoring systems for different brackets so expected points can be calculated
+# different scoring systems for different brackets so expected points can be 
+# calculated
 scoring_systems = {
   "ESPN" : {
     "round" : {
@@ -129,10 +130,18 @@ class Model:
     self.completed_simulations = 0
     self.scoring_system = scoring_system
     self.simulation_results = []
-    self.imported_brackets = []
+    self.entries = {
+      "imported_entries": [],
+      "actual_results": None,
+      "most_valuable_teams": None,
+      "most_popular_teams": None
+    }
     pass
 
   def create_teams(self):
+    # Not sure why this starts for the root directory and not the location of 
+    # the file.  I would've thought that moving model.py would've necessitated 
+    # changing this path but it didn't.
     path = "team_data/"+str(self.year)+"_all_prepped_data.csv"
     all_teams = {}
     if os.path.exists(path):
@@ -141,13 +150,14 @@ class Model:
     else:
       print(" couldn't find data")
       # TBD, hook up data scraping to this
-      raise Exception("this_shouldn't_have_happened")
+      raise Exception("There is no data for this combination of team and year")
       # a = self.prep_data(path)
 
     team_data = pd.read_csv(path)
     gender_specific = team_data[team_data.gender == self.gender]
     earliest_date = gender_specific.forecast_date[-1:].values[-1]
-    # data subset is the teams from the earliest date shown. This is the data from all of the teams are still in the tournament
+    # data subset is the teams from the earliest date shown. This is the data 
+    # from all of the teams are still in the tournament
     df = gender_specific[gender_specific.forecast_date == earliest_date]
     for ind in df.index:
       picks = {
@@ -161,7 +171,8 @@ class Model:
       }
       team_name = df["team_name"][ind]
       team_seed = df["team_seed"][ind]
-      # team seeds in the imported file have an a or B suffix for playin games, this strips that 
+      # team seeds in the imported file have an a or B suffix for playin games, 
+      # this strips that 
       if len(team_seed) > 2:
         team_seed = team_seed[0:2]
       team_region = df["team_region"][ind]
@@ -188,7 +199,6 @@ class Model:
         assert False, "couldn't find team"
 
   def reset_bracket(self):
-    # self.sim_bracket.bracket=copy.deepcopy(self.start_bracket.bracket)
     self.sim_bracket.reset_bracket()
     pass
 
@@ -247,11 +257,28 @@ class Model:
     self.postprocess_bracket(most_popular_bracket, "picked_frequency")
     return most_popular_bracket
 
+  def import_actual_results(self):
+    team_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\actual.json'
+    current_path = os.path.dirname(__file__)
+    new_team_data = os.path.join(current_path, team_data)
+    actual_results = json.load(open(new_team_data, "r"))
+    for region in actual_results:
+      for seed in actual_results[region]:
+        for team in actual_results[region][seed]:
+          if self.all_teams[region][seed][0].name == team:
+            self.all_teams[region][seed][0].entry_picks["actual_results"] = actual_results[region][seed][team]
+          else:
+            self.all_teams[region][seed][1].entry_picks["actual_results"] = actual_results[region][seed][team]
+    # actual_results = Bracket(self)
+    # self.import_actual_results(actual_results)
+    # return actual_results
+
   def prep_data(self, path):
     # placeholder function for now
     
     return None
   
+
   # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
   def postprocess_bracket(self, bracket, criteria):
     self.postprocess_recursion(bracket.bracket, criteria)
@@ -272,9 +299,10 @@ class Model:
     return json.dumps(self.all_teams, default=lambda o: o.toJSON(), sort_keys=True, ensure_ascii=False)
 
   def add_entry(self, entry):
-    entry.index = len(self.imported_brackets)
-    self.imported_brackets.append(entry)
+    entry.index = len(self.entries["imported_entries"])
+    self.entries["imported_entries"].append(entry)
     self.update_entry_score(entry)
+    # self.
 
   def add_bulk_entries_from_database(self, number_entries):
     current_path = os.path.dirname(__file__)
@@ -291,25 +319,29 @@ class Model:
     data = tuple([number_entries])
     bulk_entries = current.execute(pull_query, data).fetchall()
     for entry in bulk_entries:
-      # I don't feel great about the formatting of this, trying to think of a better structure
+      # I don't feel great about the formatting used to add brackets, Seems like
+      # I should be passing in just the data instead of initializing an object 
+      # here. trying to think of a better structure
       self.add_entry(Entry(method="database", source=entry))
 
 
   def update_entry_score(self, entry):
-    print('team name, sim results, entry results')
+    # print('team name, sim results, entry results')
     for region in self.all_teams:
       for seed in self.all_teams[region]:
         for team in self.all_teams[region][seed]:
-          while len(team.entry_picks) < entry.index+1:
-            team.entry_picks.append(-1)
-          team.entry_picks[entry.index] = entry.team_picks[team.region][team.seed][team.name]
+          while len(team.entry_picks["imported_entries"]) < entry.index+1:
+            team.entry_picks["imported_entries"].append(-1)
+          team.entry_picks["imported_entries"][entry.index] = entry.team_picks[team.region][team.seed][team.name]
           # print(team.name, team.simulation_results[0], )
           for i in range(0, len(team.simulation_results)):
-            if len(entry.scores) <= i:
-              entry.scores.append(0)
-            entry.scores[i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks[entry.index])]
-          print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
-          entry
+            if len(entry.scores["simulations"]) <= i:
+              entry.scores["simulations"].append(0)
+            entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks["imported_entries"][entry.index])]
+          entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.entry_picks["imported_entries"][entry.index])]
+          # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
+          # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
+          # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
     pass
 
 
@@ -382,7 +414,8 @@ class Bracket:
     pass
 
   def reset_bracket(self):
-    # as it turns out is much more performant to just reset all the teams to blank rather than copying entire object
+    # as it turns out is much more performant to just reset all the teams to 
+    # blank rather than copying entire object
     placeholder_team = Team('tbd',0,'tbd',-1,-1)
     self.reset_bracket_recursion(self.bracket, placeholder_team)
     
@@ -437,13 +470,6 @@ class Bracket:
   def import_bracket_url(self):
     pass
 
-  # def import_bracket_json(self, source):
-  #   importer = JsonImporter()
-  #   root = importer.import_(source) 
-  #   c = json.loads(source)
-  #   # root2 = importer.import_(d)
-  #   return root
-
 
 class Team:
   def __init__(self, name, seed, region, elo, picked_frequency):
@@ -476,7 +502,12 @@ class Team:
     self.simulation_results = []
     self.temp_result = 0
     self.total_expected_points = 0
-    self.entry_picks = []
+    self.entry_picks = {
+      "imported_entries": [],
+      "actual_results": None,
+      "most_valuable_teams": None,
+      "most_popular_teams": None
+    }
     pass
 
   def __str__(self):
@@ -502,7 +533,6 @@ class Team:
       "total_expected_points" : self.total_expected_points,
     }
     return export_data
-
 
 class Game:
   # placeholder base class used as anytree implementation requires
@@ -616,21 +646,26 @@ class Entry:
     if method == "empty":
       raise Exception("unknown method designated for bracket creation")
     elif method == "simulation":
-      self.import_bracket_json(source)
+      self.import_entry_json(source)
     
     elif method == "url":
-      self.import_bracket_url(source)
+      self.import_entry_url(source)
     elif method == "database":
-      self.import_bracket_database(source)
+      self.import_entry_database(source)
     else:
       raise Exception("unknown method designated for bracket creation")
       # self.bracket = create_bracket()
     
     self.index = 0
-    self.scores = []
+    self.scores = {
+      "simulations": [],
+      "actual_results": 0,
+      "most_valuable_teams": 0,
+      "most_popular_teams": 0
+    }
     # model.add_entry(self)
 
-  def import_bracket_json(self, source):
+  def import_entry_json(self, source):
     b = json.loads(source)
     self.name = b["name"]
     self.entryID = b["entryID"]
@@ -639,9 +674,7 @@ class Entry:
     self.source = b["source"]
     pass
 
-  def import_bracket_database(self, source):
-
-
+  def import_entry_database(self, source):
     self.name = source[1]
     self.team_picks = self.assign_team_picks_from_database(source) 
     self.entryID = source[0]
@@ -665,13 +698,17 @@ class Entry:
     return team_picks
 
 
-
+# Holding a main function removes the global scoping I was using to call 
+# the model I'm scoring various brackets. I'd like to rearrange this in some way
+# but need to think on how.
 # def main():
 
 # t=time.time()
 model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
+model.import_actual_results()
 model.add_bulk_entries_from_database(10)
+
 # t = time.time() - t
 a = model.output_most_valuable_team()
 b = model.output_most_popular_picks()
@@ -682,7 +719,6 @@ e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular brack
 print(RenderTree(b.bracket, style=AsciiStyle()))
 b = model.export_teams_to_json()
 d = Entry(method="simulation", source=c)
-
 f = Entry(method="simulation", source=e)
 
 
