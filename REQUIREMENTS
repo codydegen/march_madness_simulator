@@ -4,3 +4,4 @@ selenium
 pandas
 requests
 lxml
+matplotlib

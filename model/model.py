@@ -2,6 +2,7 @@
 import random
 import math
 import pandas as pd
+from pandas import DataFrame as df
 from anytree import Node, RenderTree, NodeMixin, AsciiStyle
 from anytree.exporter import DotExporter, JsonExporter
 from anytree.importer import JsonImporter
@@ -12,6 +13,8 @@ import json
 import queue
 import csv
 import sqlite3
+import statistics
+import matplotlib.pyplot as plt
 
 
 final_four_pairings = {
@@ -137,6 +140,11 @@ class Model:
       "most_popular_teams": None,
       "chalk": None,
     }
+    self.simulations_won_by_special_entries = {
+      "most_valuable_teams": 0,
+      "most_popular_teams": 0,
+      "chalk": 0,
+    }
     self.entries = {
       "imported_entries": [],
       # "actual_results": None,
@@ -144,13 +152,19 @@ class Model:
       "most_popular_teams": None,
       "chalk": None,
     }
+    self.simulations_won_by_imported_entries = []
+    self.winning_scores_of_simulations = []
     pass
 
   def create_teams(self):
     # Not sure why this starts for the root directory and not the location of 
     # the file.  I would've thought that moving model.py would've necessitated 
     # changing this path but it didn't.
-    path = "team_data/"+str(self.year)+"_all_prepped_data.csv"
+    current_path = os.path.dirname(__file__)
+    team_data = "../team_data/"+str(self.year)+"_all_prepped_data.csv"
+    path = os.path.join(current_path, team_data)
+
+    
     all_teams = {}
     if os.path.exists(path):
       print(" found data")
@@ -355,7 +369,7 @@ class Model:
 
   def add_simulation_results_postprocessing(self):
     self.actual_results = Simulation_results(self, actual=True)
-    for i in range(1, self.number_simulations):
+    for i in range(0, self.number_simulations):
       self.simulation_results.append(Simulation_results(self, index=i))
     pass
 
@@ -444,7 +458,18 @@ class Model:
           # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
           # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
           # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
-    pass
+
+  def output_results(self):
+    average_winning_score = statistics.mean(self.winning_scores_of_simulations)
+    a = {'winning_score': self.winning_scores_of_simulations,
+         'most_valuable_score': self.special_entries["most_valuable_teams"].scores["simulations"]
+         }
+
+    b = df(data=a)
+    print(b)
+    c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
+    plt.show()
+    print(average_winning_score)
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -824,25 +849,9 @@ class Simulation_results:
       "most_popular_teams" : False,
       "chalk" : False
     }
-    # self.most_valuable_bracket_score = 0
-    # self.most_popular_bracket_score = 0
-    # self.chalk_score = 0
+
     self.number_of_entries = len(self.model.entries["imported_entries"])
-    # self.beaten_by_most_valuable_bracket = False
-    # self.beaten_by_most_popular_bracket = False
-    # self.beaten_by_chalk = False
-    # if actual:
-      # self.import_actual_results()
-    # else:
     self.import_scoring_list()
-
-  # def import_actual_results(self):
-  #   entry_results = []
-  #   winning_score = 0
-  #   winning_index = [-1]
-  #   for entry in self.model.entries["imported_entries"]:
-  #     entry_results.append(entry.scores["actual_results"])
-
 
   def import_scoring_list(self):
     entry_results = []
@@ -862,7 +871,7 @@ class Simulation_results:
         winning_index = [len(entry_results) - 1]
       elif entry_results[-1] == winning_score:
         winning_index.append(len(entry_results) - 1)
-        print("tied winning brackets in simulation: "+str(self.simulation_index))
+        # print("tied winning brackets in simulation: "+str(self.simulation_index))
     
     # Populate special bracket scores
     if self.actual:
@@ -883,12 +892,18 @@ class Simulation_results:
     for criteria in self.beaten_by:
       if self.scoring_list[criteria] >= winning_score:
         self.beaten_by[criteria] = True
-        print(criteria+" would have won simulation "+str(self.simulation_index))
-
+        # print(criteria+" would have won simulation "+str(self.simulation_index))
+        self.model.simulations_won_by_special_entries[criteria] += 1
     self.winning_score = winning_score
     self.winning_index = winning_index
+    if not self.actual:
+      self.model.winning_scores_of_simulations.append(winning_score)
+      if len(self.model.simulations_won_by_imported_entries) != len(self.model.entries["imported_entries"]):
+        for j in range(0,len(self.model.entries["imported_entries"])):
+          self.model.simulations_won_by_imported_entries.append(0)
+      for i in winning_index:
+        self.model.simulations_won_by_imported_entries[i] += 1
 
-    pass
 
 
 
@@ -898,26 +913,17 @@ class Simulation_results:
 # def main():
 
 # t=time.time()
-model = Model(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
 model.update_entry_picks()
 model.initialize_special_entries()
 model.analyze_special_entries()
-# model.update_entry_picks()
-# model.postprocess_via_popularity_and_value()
+
 model.add_bulk_entries_from_database(10)
 model.add_simulation_results_postprocessing()
+model.output_results()
 # t = time.time() - t
-# a = model.output_most_valuable_bracket()
-# b = model.output_most_popular_bracket()
-# # print(t)
-# print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
-# c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
-# e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
-# print(RenderTree(b.bracket, style=AsciiStyle()))
-# b = model.export_teams_to_json()
-# d = Entry(method="json", source=c)
-f = Entry(method="json", source=e)
+
 print("done")
 
 
