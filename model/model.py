@@ -129,10 +129,17 @@ class Model:
     self.number_simulations = number_simulations
     self.completed_simulations = 0
     self.scoring_system = scoring_system
+
+    self.actual_results = None
     self.simulation_results = []
+    self.special_entries = {
+      "most_valuable_teams": None,
+      "most_popular_teams": None,
+      "chalk": None,
+    }
     self.entries = {
       "imported_entries": [],
-      "actual_results": None,
+      # "actual_results": None,
       "most_valuable_teams": None,
       "most_popular_teams": None,
       "chalk": None,
@@ -209,15 +216,10 @@ class Model:
       # t = time.time()
       self.sim_bracket.simulate_bracket()
       self.update_scores()
-      # a = time.time() - t
-      # self.update_winners()
       self.reset_bracket()
-      # b = time.time() - t
-      # c = b-a
       self.completed_simulations += 1
       # if self.completed_simulations%100 == 0:
       # print("simulation number "+str(i)+" completed.")
-      # print(a, c)
     self.calculate_expected_points()
 
   def update_scores(self):
@@ -260,28 +262,26 @@ class Model:
 
   def update_entry_picks(self):
     team_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\actual.json'
-    chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
+    # chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
-    chalk_team_data = os.path.join(current_path, chalk_data)
+    # chalk_team_data = os.path.join(current_path, chalk_data)
     actual_results = json.load(open(new_team_data, "r"))
-    chalk_results = json.load(open(chalk_team_data, "r"))
-
-
+    # chalk_results = json.load(open(chalk_team_data, "r"))
 
     for region in actual_results:
       for seed in actual_results[region]:
         for team in actual_results[region][seed]:
           if self.all_teams[region][seed][0].name == team:
             self.all_teams[region][seed][0].entry_picks["actual_results"] = actual_results[region][seed][team]
-            self.all_teams[region][seed][0].entry_picks["chalk"] = chalk_results[region][seed][team]
-            self.all_teams[region][seed][0].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
-            self.all_teams[region][seed][0].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
+            # self.all_teams[region][seed][0].entry_picks["chalk"] = chalk_results[region][seed][team]
+            # self.all_teams[region][seed][0].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
+            # self.all_teams[region][seed][0].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
           else:
             self.all_teams[region][seed][1].entry_picks["actual_results"] = actual_results[region][seed][team]
-            self.all_teams[region][seed][1].entry_picks["chalk"] = chalk_results[region][seed][team]
-            self.all_teams[region][seed][1].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
-            self.all_teams[region][seed][1].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
+            # self.all_teams[region][seed][1].entry_picks["chalk"] = chalk_results[region][seed][team]
+            # self.all_teams[region][seed][1].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
+            # self.all_teams[region][seed][1].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
     # actual_results = Bracket(self)
     # self.update_entry_picks(actual_results)
     entry = {
@@ -292,6 +292,27 @@ class Model:
       "source" : "Actual results"
     }
 
+    # chalk_entry = {
+    #   "team_picks" : chalk_results,
+    #   "name" : "Chalk entry",
+    #   "entryID" : -1,
+    #   "method" : "Chalk entry",
+    #   "source" : "Chalk entry"
+    # }
+
+    self.entries["actual_results"] = Entry(source=json.dumps(entry), method="json")
+    # self.entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="json")
+    # return actual_results
+
+  def initialize_special_entries(self):
+    # Initialize the special entries including:
+    # Most valuable bracket, most popular bracket, chalk bracket
+    most_valuable_bracket = self.output_most_valuable_bracket()
+    most_popular_bracket = self.output_most_popular_bracket()
+    current_path = os.path.dirname(__file__)
+    chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
+    chalk_team_data = os.path.join(current_path, chalk_data)
+    chalk_results = json.load(open(chalk_team_data, "r"))
     chalk_entry = {
       "team_picks" : chalk_results,
       "name" : "Chalk entry",
@@ -299,21 +320,43 @@ class Model:
       "method" : "Chalk entry",
       "source" : "Chalk entry"
     }
+    mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
+    mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    self.special_entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
+    self.special_entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
+    self.special_entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="json")
 
-    self.entries["actual_results"] = Entry(source=json.dumps(entry), method="simulation")
-    self.entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="simulation")
-    # return actual_results
+  def analyze_special_entries(self):
+    # Add in the results for special brackets including:
+    # Most valuable bracket, most popular bracket, chalk bracket
+    for entry in self.special_entries:
+      self.update_special_entry_score(self.special_entries[entry], entry)
+    # most_valuable_bracket = self.output_most_valuable_bracket()
+    # most_popular_bracket = self.output_most_popular_bracket()
+    # mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
+    # mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    # self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
+    # self.entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
 
-  def postprocess(self):
+    # self.update_entry_picks()
+
+
+  def postprocess_via_popularity_and_value(self):
     # Add most valuable and most picked brackets
     most_valuable_bracket = self.output_most_valuable_bracket()
     most_popular_bracket = self.output_most_popular_bracket()
     mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
     mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
-    self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="simulation")
-    self.entries["most_popular_teams"] = Entry(source=mpb_source, method="simulation")
-    self.update_entry_picks()
+    self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
+    self.update_special_entry_score(self.entries["most_valuable_teams"])
+    self.entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
+    
+    pass
 
+  def add_simulation_results_postprocessing(self):
+    self.actual_results = Simulation_results(self, actual=True)
+    for i in range(1, self.number_simulations):
+      self.simulation_results.append(Simulation_results(self, index=i))
     pass
 
   def prep_data(self, path):
@@ -344,7 +387,7 @@ class Model:
   def add_entry(self, entry):
     entry.index = len(self.entries["imported_entries"])
     self.entries["imported_entries"].append(entry)
-    self.update_entry_score(entry)
+    self.update_imported_entry_score(entry)
     # self.
 
   def add_bulk_entries_from_database(self, number_entries):
@@ -362,13 +405,28 @@ class Model:
     data = tuple([number_entries])
     bulk_entries = current.execute(pull_query, data).fetchall()
     for entry in bulk_entries:
-      # I don't feel great about the formatting used to add brackets, Seems like
+      # I don't feel great about the formatting used to add entries, Seems like
       # I should be passing in just the data instead of initializing an object 
       # here. trying to think of a better structure
       self.add_entry(Entry(method="database", source=entry))
 
+  def update_special_entry_score(self, entry, entry_name):
+    for region in self.all_teams:
+        for seed in self.all_teams[region]:
+          for team in self.all_teams[region][seed]:
+            team.special_entries[entry_name] = entry.team_picks[team.region][team.seed][team.name]
+            for i in range(0, len(team.simulation_results)):
+              if len(entry.scores["simulations"]) <= i:
+                entry.scores["simulations"].append(0)
+              entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.special_entries[entry_name])]
+            entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.special_entries[entry_name])]
+            # entry.scores["chalk"] += self.scoring_system["cumulative"][min(team.entry_picks["chalk"], team.entry_picks["imported_entries"][entry.index])]
+            # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
+            # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
+            # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
 
-  def update_entry_score(self, entry):
+  def update_imported_entry_score(self, entry):
+    # update the scoring list for the passed in entry.
     # print('team name, sim results, entry results')
     for region in self.all_teams:
       for seed in self.all_teams[region]:
@@ -382,12 +440,11 @@ class Model:
               entry.scores["simulations"].append(0)
             entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks["imported_entries"][entry.index])]
           entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.entry_picks["imported_entries"][entry.index])]
+          # entry.scores["chalk"] += self.scoring_system["cumulative"][min(team.entry_picks["chalk"], team.entry_picks["imported_entries"][entry.index])]
           # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
           # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
           # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
     pass
-
-
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -504,7 +561,7 @@ class Bracket:
     results = {}
     results["team_picks"] = results_list
     results["name"] = name
-    results["method"] = "simulation"
+    results["method"] = "json"
     results["entryID"] = None
     results["source"] = None
     a = json.dumps(results)
@@ -547,10 +604,15 @@ class Team:
     self.total_expected_points = 0
     self.entry_picks = {
       "imported_entries" : [],
-      "actual_results" : None,
-      "most_valuable_teams" : None,
-      "most_popular_teams" : None,
-      "chalk" : None
+      "actual_results" : 0,
+      # "most_valuable_teams" : 0,
+      # "most_popular_teams" : 0,
+      # "chalk" : 0
+    }
+    self.special_entries = {
+      "most_valuable_teams": None,
+      "most_popular_teams": None,
+      "chalk": None,
     }
     pass
 
@@ -689,7 +751,7 @@ class Entry:
   def __init__(self, method, source):
     if method == "empty":
       raise Exception("unknown method designated for bracket creation")
-    elif method == "simulation":
+    elif method == "json":
       self.import_entry_json(source)
     
     elif method == "url":
@@ -743,17 +805,90 @@ class Entry:
     return team_picks
 
 class Simulation_results:
-  def __init__(self, model):
-    self.score_list = []
+  def __init__(self, model, actual=False, index=-1):
+    self.model = model
+    self.simulation_index = index
+    self.actual = actual
+    self.score_list = {
+      "entries" : [],
+      # "actual_results" : 0,
+      "most_valuable_teams" : 0,
+      "most_popular_teams" : 0,
+      "chalk" : 0
+    }
     self.winning_score = 0
-    self.winning_index = 0
-    self.most_valuable_bracket_score = 0
-    self.most_popular_bracket_score = 0
-    self.number_of_entries = 0
-    self.beaten_by_most_valuable_bracket = False
-    self.beaten_by_most_popular_bracket = False
-    self.beaten_by_chalk = False
+    self.winning_index = []
+    self.beaten_by = {
+      # "actual_results" : False,
+      "most_valuable_teams" : False,
+      "most_popular_teams" : False,
+      "chalk" : False
+    }
+    # self.most_valuable_bracket_score = 0
+    # self.most_popular_bracket_score = 0
+    # self.chalk_score = 0
+    self.number_of_entries = len(self.model.entries["imported_entries"])
+    # self.beaten_by_most_valuable_bracket = False
+    # self.beaten_by_most_popular_bracket = False
+    # self.beaten_by_chalk = False
+    # if actual:
+      # self.import_actual_results()
+    # else:
+    self.import_scoring_list()
 
+  # def import_actual_results(self):
+  #   entry_results = []
+  #   winning_score = 0
+  #   winning_index = [-1]
+  #   for entry in self.model.entries["imported_entries"]:
+  #     entry_results.append(entry.scores["actual_results"])
+
+
+  def import_scoring_list(self):
+    entry_results = []
+    winning_score = 0
+    winning_index = [-1]
+    most_valuable_team_score = 0
+    chalk_score = 0
+    most_popular_team_score = 0
+    # Populate imported entry scores
+    for entry in self.model.entries["imported_entries"]:
+      if self.actual:
+        entry_results.append(entry.scores["actual_results"])
+      else:
+        entry_results.append(entry.scores["simulations"][self.simulation_index])
+      if entry_results[-1] > winning_score:
+        winning_score = entry_results[-1]
+        winning_index = [len(entry_results) - 1]
+      elif entry_results[-1] == winning_score:
+        winning_index.append(len(entry_results) - 1)
+        print("tied winning brackets in simulation: "+str(self.simulation_index))
+    
+    # Populate special bracket scores
+    if self.actual:
+      most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["actual_results"]
+      most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["actual_results"]
+      chalk_score = self.model.special_entries["chalk"].scores["actual_results"]
+    else:
+      most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["simulations"][self.simulation_index]
+      most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["simulations"][self.simulation_index]
+      chalk_score = self.model.special_entries["chalk"].scores["simulations"][self.simulation_index]
+    self.scoring_list = {
+      "entries" : entry_results,
+      # "actual_results" : 0,
+      "most_valuable_teams" : most_valuable_team_score,
+      "most_popular_teams" : most_popular_team_score,
+      "chalk" : chalk_score
+    }
+    for criteria in self.beaten_by:
+      if self.scoring_list[criteria] >= winning_score:
+        self.beaten_by[criteria] = True
+        print(criteria+" would have won simulation "+str(self.simulation_index))
+
+    self.winning_score = winning_score
+    self.winning_index = winning_index
+
+    pass
 
 
 
@@ -763,23 +898,27 @@ class Simulation_results:
 # def main():
 
 # t=time.time()
-model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=1000, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
+model.update_entry_picks()
+model.initialize_special_entries()
+model.analyze_special_entries()
 # model.update_entry_picks()
-model.postprocess()
+# model.postprocess_via_popularity_and_value()
 model.add_bulk_entries_from_database(10)
-
+model.add_simulation_results_postprocessing()
 # t = time.time() - t
-a = model.output_most_valuable_bracket()
-b = model.output_most_popular_bracket()
-# print(t)
-print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
-c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
-e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
-print(RenderTree(b.bracket, style=AsciiStyle()))
-b = model.export_teams_to_json()
-d = Entry(method="simulation", source=c)
-f = Entry(method="simulation", source=e)
+# a = model.output_most_valuable_bracket()
+# b = model.output_most_popular_bracket()
+# # print(t)
+# print(RenderTree(model.start_bracket.bracket, style=AsciiStyle()))
+# c = model.sim_bracket.export_bracket_to_json(a.bracket.root, "most valuable bracket")
+# e = model.sim_bracket.export_bracket_to_json(b.bracket.root, "most popular bracket")
+# print(RenderTree(b.bracket, style=AsciiStyle()))
+# b = model.export_teams_to_json()
+# d = Entry(method="json", source=c)
+f = Entry(method="json", source=e)
+print("done")
 
 
 # if __name__ == '__main__':
