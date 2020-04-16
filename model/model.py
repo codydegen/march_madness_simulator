@@ -463,11 +463,13 @@ class Model:
     average_winning_score = statistics.mean(self.winning_scores_of_simulations)
     a = {'winning_score': self.winning_scores_of_simulations,
          'most_valuable_score': self.special_entries["most_valuable_teams"].scores["simulations"]
+
          }
 
     b = df(data=a)
     print(b)
-    c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
+    # c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
+    d = plt.hist(b["winning_score"], bins=40)
     plt.show()
     print(average_winning_score)
 
@@ -913,13 +915,13 @@ class Simulation_results:
 # def main():
 
 # t=time.time()
-model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"])
+model = Model(number_simulations=10000, scoring_system=scoring_systems["ESPN"])
 model.batch_simulate()
 model.update_entry_picks()
 model.initialize_special_entries()
 model.analyze_special_entries()
 
-model.add_bulk_entries_from_database(10)
+model.add_bulk_entries_from_database(100)
 model.add_simulation_results_postprocessing()
 model.output_results()
 # t = time.time() - t
