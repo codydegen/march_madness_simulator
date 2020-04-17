@@ -7,14 +7,20 @@ import requests
 import os
 import re
 
-def csv_combine(forecast_path, who_picked_path_men, who_picked_path_women, year):
-  if os.path.exists(forecast_path):
-    # print("path exists")
+
+
+def csv_combine(year):
+  forecast_path = str(year)+"_fivethirtyeight_ncaa_forecasts.csv"
+  who_picked_path_men = str(year)+"_mens_who_picked.csv"
+  who_picked_path_women = str(year)+"_womens_who_picked.csv"
+  current_path = os.path.dirname(__file__)
+  forecast_file = os.path.join(current_path, forecast_path)
+  if os.path.exists(forecast_file):
     pass
   else:
     pass
     # print(" path doesn't exist")
-  forecast = pd.read_csv(forecast_path)
+  forecast = pd.read_csv(forecast_file)
   who_picked_men = pd.read_csv(who_picked_path_men)
   who_picked_women = pd.read_csv(who_picked_path_women)
   j = 0
@@ -59,7 +65,7 @@ def csv_combine(forecast_path, who_picked_path_men, who_picked_path_women, year)
         new_name = name_fix(forecast[(forecast["team_seed"] == new_seed) & (forecast["team_region"] == region) & (forecast["gender"] == "womens")].values[0],"womens",year)
         subset = who_picked_women.loc[who_picked_women["team_name"] == new_name]
       j+=1
-      print(" couldn't find "+team_name+" seed:"+equivalent_seed+". Replaced with "+new_name+", seed:"+new_seed+" "+str(j))
+      # print("couldn't find "+team_name+" seed:"+equivalent_seed+". Replaced with "+new_name+", seed:"+new_seed+" "+str(j))
       r64.append(subset["R64"].values[0])
       r32.append(subset["R32"].values[0])
       r16.append(subset["S16"].values[0])
@@ -81,8 +87,9 @@ def csv_combine(forecast_path, who_picked_path_men, who_picked_path_women, year)
   forecast['E8_picked'] = r8
   forecast['F4_picked'] = r4
   forecast['NCG_picked'] = r2
-
-  forecast.to_csv("data/"+str(year)+"_all_prepped_data.csv", index=False)
+  output_path = os.path.join(current_path, str(year)+"_all_prepped_data.csv")
+  with open(output_path, "w") as file:
+    forecast.to_csv(file, index=False, line_terminator='\n')
     # print(subset)
 
     # print forecast.iloc[i]['team_name'], forecast.iloc[i]['team_seed']
@@ -96,7 +103,7 @@ def csv_combine(forecast_path, who_picked_path_men, who_picked_path_women, year)
   # print(who_picked)
 
 
-def name_fix(name,gender, year):
+def name_fix(name, gender, year):
   swapper = {
     "Louisiana State": "LSU",
     "Florida State": "Florida St",
@@ -187,7 +194,4 @@ def name_fix(name,gender, year):
   else:
     return name
 
-who_picked_path_men = "data/2019_men_who_picked.csv"
-who_picked_path_women = "data/2019_women_who_picked.csv"
-forecast_path = "data/2019_fivethirtyeight_ncaa_forecasts.csv"
-csv_combine(forecast_path, who_picked_path_men, who_picked_path_women, 2019)
+csv_combine(2019)

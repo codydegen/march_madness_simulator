@@ -47,11 +47,11 @@ def add_entries_to_database(db, entry, entries):
 
 
 
-def scrape_data_for_entries(db, ip_addresses):
+def scrape_data_for_entries(db, ip_addresses, gender):
   # take key from database
   current_path = os.path.dirname(__file__)
-  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2019\\empty.json"), "r")
-  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2019\\reverse_lookup.json"), "r")
+  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\womens2019\\empty.json"), "r")
+  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\womens2019\\reverse_lookup.json"), "r")
   reverse_bracket = json.load(reverse_lookup_file)
   empty_bracket = json.load(empty_bracket_file)
 
@@ -64,8 +64,8 @@ def scrape_data_for_entries(db, ip_addresses):
     valid_keys = current.fetchall()
   # establish a proxy
   for key in valid_keys:
-    url = "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/entry?entryID="+str(key[0])
-    try:
+    url = "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/entry?entryID="+str(key[0])
+    if True:
       proxy_index = random.randint(0, len(ip_addresses) - 1)
       proxies = {"http": ip_addresses[proxy_index], 
               "https": ip_addresses[proxy_index]}
@@ -81,7 +81,7 @@ def scrape_data_for_entries(db, ip_addresses):
       predicted_score_loser = soup.select("#t2")
       if(len(predicted_score_winner) > 0):
         wins_array = get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_id)
-        update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser, wins_array)
+        update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser, wins_array, gender)
         user_id = add_user_to_database(db, username)
         user_entry_id = add_user_entries_to_database(db, user_id, key)
         add_other_user_brackets_to_database(db)
@@ -91,12 +91,12 @@ def scrape_data_for_entries(db, ip_addresses):
       else:
         print("\n\nno bracket was filled out for entry "+str(entry_id))
         # time.sleep(3)
-    except:
-      ip_addresses.pop(proxy_index)
-      print("proxy failed, remaining proxies: "+str(len(ip_addresses)))
+    # except:
+    #   ip_addresses.pop(proxy_index)
+    #   print("proxy failed, remaining proxies: "+str(len(ip_addresses)))
 
 
-def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html, wins_array):
+def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, predicted_score_winner_html, predicted_score_loser_html, wins_array, gender):
   predicted_score_winner = int(predicted_score_winner_html[0].attrs['value'])
   predicted_score_loser = int(predicted_score_loser_html[0].attrs['value'])
   entry_id = entry[0]
@@ -104,7 +104,11 @@ def update_entry_with_entry_name_and_predicted_scores(db, entry, entry_html, pre
   entry_name = entry_html[0].text
   current = db.cursor()
   team_array = []
-  for i in range(1,69):
+  if gender == "mens":
+    num_teams = 68
+  else:
+    num_teams = 64
+  for i in range(1,num_teams+1):
     team_array.append(", team_"+str(i)+"_wins = ?")
   query = '''UPDATE entries
               SET name = ?, predicted_score_winner = ?, predicted_score_loser = ? '''+"".join(team_array)+'''
@@ -299,9 +303,9 @@ def migrate_entries_from_picks_to_entries(db):
   # Iterate through pics table and add pics to entries
   pass
 
-def main():
-  team_data = r'..\\team_data\\team_mens2019_20200407_0840.json'
-  entries_data = r'..\\web_scraper\\mens2019\\bracket_results\\sc_consolidated.json'
+def main(gender):
+  team_data = r'..\\web_scraper\\womens2019\\preliminary_results.json'
+  entries_data = r'..\\web_scraper\\womens2019\\bracket_results\\bs_consolidated.json'
   
 
   current_path = os.path.dirname(__file__)
@@ -311,14 +315,15 @@ def main():
   teams = json.load(open(new_team_data, "r"))
   entries = json.load(open(new_entries_data, "r"))
 
-  database_string = r"db\\mens2019.db"
+  database_string = r"..\\db\\womens2019.db"
   db = sqlite3.connect(database_string)
-  # migrate_entries_from_picks_to_entries(db)
+
+  # Add only if teams haven't been added
   # populate_teams_table(db, teams)
-  # add_group_to_database(db, 2895266, "Highly Questionable!")
-  # populate_entries_table(db, entries, 1041234)
-  # ip_addresses = ["52.179.231.206:80", 
-                  # "52.179.231.206:80"]
+  # Add only if groups haven't been added
+  # add_group_to_database(db, 30053, "WNBA Stars")
+  # populate_entries_table(db, entries, 30053)
+
   ip_addresses = ["52.179.231.206:80", 
                   "68.188.59.198:80",
                   "50.206.25.111:80",
@@ -339,7 +344,10 @@ def main():
                   "136.25.2.43:40017",
                   "144.34.195.56:80"
                   ]
-  scrape_data_for_entries(db, ip_addresses)
+
+  ip_addresses = ["52.179.231.206:80", 
+                  "52.179.231.206:80"]
+  scrape_data_for_entries(db, ip_addresses, gender)
   
 if __name__ == '__main__':
-    main()
+    main("womens")

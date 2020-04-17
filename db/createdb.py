@@ -124,4 +124,4 @@ def main(database):
     print("Error! cannot create the database connection.")
  
 if __name__ == '__main__':
-  main("db/mens2019.db")
+  main("db/womens2019.db")

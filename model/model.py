@@ -28,9 +28,10 @@ final_four_pairings = {
     }
   },
   "womens" : {
-    2019 : {
-      # tbd
-    },
+    2019 : 
+      [["Greensboro", "Portland"],
+      ["Chicago", "Albany"]]
+    ,
     2018 : {
       # TBD
     }
@@ -395,8 +396,12 @@ class Model:
     node.postprocess_pick_team(criteria)
     pass
 
-  def export_teams_to_json(self):
-    return json.dumps(self.all_teams, default=lambda o: o.toJSON(), sort_keys=True, ensure_ascii=False)
+  def export_teams_to_json(self, expanded=True, empty=False, array=True):
+    if expanded:
+      return json.dumps(self.all_teams, default=lambda o: o.toJSON(array), sort_keys=True, ensure_ascii=False)
+    else:
+      return json.dumps(self.all_teams, default=lambda o: o.toJSON(expanded=False, empty=empty), sort_keys=True, ensure_ascii=False)
+
 
   def add_entry(self, entry):
     entry.index = len(self.entries["imported_entries"])
@@ -475,6 +480,60 @@ class Model:
     c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
     plt.show()
     print(average_winning_score)
+
+  def create_json_files(self):
+    current_path = os.path.dirname(__file__)
+    json_connector = r"..\\web_scraper\\"+self.gender+str(self.year)+r"\\"
+    json_path = os.path.join(current_path, json_connector)
+    
+
+    if not os.path.exists(json_path+"chalk.json"):
+      print("writing chalk.json file.")
+      chalk = self.export_teams_to_json(expanded=False)
+      chalk = chalk.replace("[","")
+      chalk = chalk.replace("]","")
+      with open(json_path+"chalk.json", "w") as chalk_file:
+        json.dump(json.loads(chalk), chalk_file)
+        print('''Note: you must fill in the overall number one and number two seeds yourself.
+                  \nIf this is for the men's bracket, you must update the play in teams (losers of the play in game have zero wins instead of one)''')
+    if not os.path.exists(json_path+"empty.json"):
+      print("writing empty.json file.")
+      empty = self.export_teams_to_json(expanded=False, empty=True)
+      empty = empty.replace("[","")
+      empty = empty.replace("]","")
+      # This one is to concatenate two teams with the same seed
+      empty = empty.replace("}, {", ", ") 
+      empty = json.loads(empty)
+      with open(json_path+"empty.json", "w") as empty_file:
+        json.dump(empty, empty_file)
+        print('''Note: If this is for the men's bracket, you must update the play in teams (losers of the play in game has zero winds instead of one)''')
+    if not os.path.exists(json_path+"reverse_lookup.json"):
+      print("writing reverse_lookup.json file.")
+      with open(json_path+"empty.json", "r") as empty_file:
+        empty = json.load(empty_file)
+        reverse = {}
+        for region in empty:
+          for seed in empty[region]:
+            for team in empty[region][seed]:
+              reverse[team] = {
+                "region" : region,
+                "seed" : seed,
+                "team" : team
+              }
+        with open(json_path+"reverse_lookup.json", "w") as reverse_file:
+          json.dump(reverse, reverse_file)
+    if not os.path.exists(json_path+"actual.json"):
+      raise Exception("The 'actual.json' file is missing, you must fill it out yourself.")
+    if not os.path.exists(json_path+"preliminary_results.json"):
+      print("writing preliminary_results.json file.")
+      preliminary = self.export_teams_to_json(array=True)
+      # preliminary = preliminary.replace("[","")
+      # preliminary = preliminary.replace("]","")
+      with open(json_path+"preliminary_results.json", "w") as preliminary_file:
+        json.dump(json.loads(preliminary), preliminary_file)
+
+
+    pass
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -657,18 +716,49 @@ class Team:
     # update elo for future rounds based on game outcome. not sure how to do this for now so no update to elo will occur
     pass
 
-  def toJSON(self):
-    export_data = {
-        "name" : self.name,
-      "seed" : self.seed,
-      "region" : self.region,
-      "elo" : self.elo,
-      "picked_frequency" : self.picked_frequency,
-      "wins" : self.wins,
-      "expected_points" : self.expected_points,
-      "total_expected_points" : self.total_expected_points,
-    }
+  def toJSON(self, expanded=True, empty=False, array=False):
+    if expanded:
+      export_data = {
+          "name" : self.name,
+        "seed" : self.seed,
+        "region" : self.region,
+        "elo" : self.elo,
+        "picked_frequency" : self.picked_frequency,
+        "wins" : self.wins,
+        "expected_points" : self.expected_points,
+        "total_expected_points" : self.total_expected_points,
+      }
+      if array:
+        export_data = [export_data]
+    else:
+      if empty:
+        export_data = {
+        self.name : 1,
+        }
+      else:
+        wins = {
+          "1" : 5,
+          "2" : 4,
+          "3" : 3,
+          "4" : 3,
+          "5" : 2,
+          "6" : 2,
+          "7" : 2,
+          "8" : 2,
+          "9" : 1,
+          "10" : 1,
+          "11" : 1,
+          "12" : 1,
+          "13" : 1,
+          "14" : 1,
+          "15" : 1,
+          "16" : 1,
+        }
+        export_data = {
+          self.name : wins[self.seed],
+        }
     return export_data
+
 
 class Game:
   # placeholder base class used as anytree implementation requires
@@ -918,8 +1008,9 @@ class Simulation_results:
 # def main():
 
 # t=time.time()
-model = Model(number_simulations=1000, scoring_system=scoring_systems["degen_bracket"])
+model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"], gender="womens")
 model.batch_simulate()
+model.create_json_files()
 model.update_entry_picks()
 model.initialize_special_entries()
 model.analyze_special_entries()
@@ -927,6 +1018,7 @@ model.analyze_special_entries()
 model.add_bulk_entries_from_database(15)
 model.add_simulation_results_postprocessing()
 model.output_results()
+
 # t = time.time() - t
 
 print("done")

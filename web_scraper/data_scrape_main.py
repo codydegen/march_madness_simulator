@@ -64,11 +64,11 @@ wnbaStars_2019 = {
   "gender" : "womens"
 }
 
-dst = ds.TopLevelScrape()
-dst.main(PROXY, sheaSerrano_2019)
-dst.main(PROXY, breannaStewart_2019)
-dst.main(PROXY, wnbaStars_2019)
+# dst = ds.TopLevelScrape()
+# dst.main(PROXY, sheaSerrano_2019)
+# dst.main(PROXY, breannaStewart_2019)
+# dst.main(PROXY, wnbaStars_2019)
 
 
-# b = ds.BracketScrape()
-# b.pass_to_consolidated(PROXY, highlyQuestionable_2019, "mens")
+b = ds.BracketScrape()
+b.pass_to_consolidated(PROXY, sheaSerrano_2019)

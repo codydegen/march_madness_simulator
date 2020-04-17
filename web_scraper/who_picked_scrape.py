@@ -7,33 +7,21 @@ import requests
 import os
 import re
 
-espn_2019_men = {
-  "year": 2019,
-  "gender": "men",
-  "url": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom"
-}
+def fetch_who_picked_data(year, gender):
 
-espn_2019_women = {
-  "year": 2019,
-  "gender": "women",
-  "url": "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/whopickedwhom"
-}
-
-espn_2018_men = {
-  "year": 2018,
-  "gender": "men",
-  "url": "https://web.archive.org/web/20190307213746/http://fantasy.espn.com/tournament-challenge-bracket/2018/en/whopickedwhom"
-}
-
-espn_2018_women = {
-  "year": 2018,
-  "gender": "women",
-  "url": "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom"
-}
-
-def get_who_picked(dataset):
+  espn_data = {
+    "mens" : {
+      2019 : "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom",
+      2018 : "https://web.archive.org/web/20190307213746/http://fantasy.espn.com/tournament-challenge-bracket/2018/en/whopickedwhom"
+    },
+    "womens" : {
+      2019 : "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/whopickedwhom",
+      2018 : "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom"
+    }
+  }
+  url = espn_data[gender][year]
   #Create a handle, page, to handle the contents of the website
-  page = requests.get(dataset["url"])
+  page = requests.get(url)
   #Store the contents of the website under doc
   doc = lh.fromstring(page.content)
   #Parse data that are stored between <tr>..</tr> of HTML
@@ -90,11 +78,40 @@ def get_who_picked(dataset):
   Dict={title:column for (title,column) in col}
   df=pd.DataFrame(Dict)
   df.head()
+  df.to_csv("../team_data/"+str(year)+"_"+gender+"_who_picked.csv", index=False)
 
-  df.to_csv("../team_data/"+str(dataset["year"])+"_"+dataset["gender"]+"_who_picked.csv", index=False)
-  print("written")
+def fetch_fivethirtyeight_data(year, file):
+  page = requests.get("https://projects.fivethirtyeight.com/march-madness-api/"+str(year)+"/fivethirtyeight_ncaa_forecasts.csv")
+  content = page.text
+  with open(file, 'w') as f:
+    f.write(content)
 
-get_who_picked(espn_2018_men)
-get_who_picked(espn_2019_women)
-get_who_picked(espn_2019_men)
-get_who_picked(espn_2018_women)
+def check_if_data_exists(year, espn_data):
+  current_path = os.path.dirname(__file__)
+  five_thirty_eight_path = "../team_data/"+str(year)+"_fivethirtyeight_ncaa_forecasts.csv"
+  five_thirty_eight_file = os.path.join(current_path, five_thirty_eight_path)
+  if not os.path.exists(five_thirty_eight_file):
+    print("Fetching 538 data from "+str(year)+".")
+    fetch_fivethirtyeight_data(year, five_thirty_eight_file)
+  else:
+    print("538 data from "+str(year)+" exists.")
+  if year in espn_data["mens"].keys():
+    print("Data on team pick frequencies is available but not downloaded for "+str(year)+".  Downloading now.")
+    espn_mens_path = "../team_data/"+str(year)+"_men_who_picked.csv"
+    espn_mens_file = os.path.join(current_path, espn_mens_path)
+    espn_womens_path = "../team_data/"+str(year)+"_women_who_picked.csv"
+    espn_womens_file = os.path.join(current_path, espn_womens_path)
+    if not os.path.exists(espn_mens_file):
+      print("Fetching men's data for "+str(year)+".")
+      fetch_who_picked_data(year, "mens", espn_data["mens"][year])
+    if not os.path.exists(espn_womens_file):
+      print("Fetching women's data for "+str(year)+".")
+      fetch_who_picked_data(year, "womens", espn_data["womens"][year])
+  else:
+    print("Data on team pick frequencies is not available for "+str(year)+".")
+
+
+
+
+
+check_if_data_exists(2019)
