@@ -1,7 +1,3 @@
-# from selenium import webdriver
-# import pandas as pd
-# import requests
-
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import pandas as pd
@@ -28,9 +24,9 @@ class TopLevelScrape:
 
   def pageExtract(self, content):
     soup = BeautifulSoup(content, 'html.parser')
-    result = soup.select('div.mpTable')[0].select('tbody')[0] # main table
+    result = soup.select('div#groupTableWrapper')[0].select('tbody')[0] # main table
     i = 1
-    time.sleep(2)
+    time.sleep(1)
     ranks=[] #Rank
     # entries=[] #Ranks
     names=[] #Ranks
@@ -116,7 +112,7 @@ class TopLevelScrape:
     time.sleep(1)
     return str(tbpn)
 
-  def main(self, PROXY, dataset, gender):
+  def main(self, PROXY, dataset):
     webdriver.DesiredCapabilities.CHROME['proxy']={
         "httpProxy":PROXY,
         "ftpProxy":PROXY,
@@ -128,7 +124,7 @@ class TopLevelScrape:
     driver = webdriver.Chrome()
     driver.get(dataset["webaddress"])
     time.sleep(4)
-    path = gender+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]
+    path = dataset["gender"]+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]
     unused = self.findMissing(path)
     for missingSheet in unused:
       pageNum = self.gotoPage(driver, missingSheet)
@@ -161,7 +157,7 @@ class BracketScrape:
   def __init__(self):
     pass
   
-  def pass_to_consolidated(self, PROXY, dataset, gender):
+  def pass_to_consolidated(self, PROXY, dataset):
     webdriver.DesiredCapabilities.CHROME['proxy']={
         "httpProxy":PROXY,
         "ftpProxy":PROXY,
@@ -172,10 +168,10 @@ class BracketScrape:
     }
     # driver = webdriver.Chrome()
     # driver.get(dataset["webaddress"])
-    path_open = gender+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
+    path_open = dataset["gender"]+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
     # path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/test/"
 
-    path_consolidated = gender+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
+    path_consolidated = dataset["gender"]+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
     open_file = open(path_consolidated+"consolidated.json", "a")
     c = {}
     for filename in os.listdir(path_open):
@@ -197,13 +193,13 @@ class BracketScrape:
     json.dump(c, open_file)
     print("file ")
 
-  def open_consolidated(self, PROXY, dataset, gender):
-    path_consolidated = gender+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
+  def open_consolidated(self, PROXY, dataset):
+    path_consolidated = dataset["gender"]+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
     open_file = open(path_consolidated+"consolidated.json", "r")
     d = json.load(open_file)
     open_file.close()
-    empty_bracket = open(gender+str(dataset["year"])+"/empty.json", "r")
-    reverse_lookup_file = open(gender+str(dataset["year"])+"/reverse_lookup.json", "r")
+    empty_bracket = open(dataset["gender"]+str(dataset["year"])+"/empty.json", "r")
+    reverse_lookup_file = open(dataset["gender"]+str(dataset["year"])+"/reverse_lookup.json", "r")
     eb = json.load(empty_bracket)
     reverse_bracket = json.load(reverse_lookup_file)
 

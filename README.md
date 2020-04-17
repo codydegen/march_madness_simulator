@@ -13,7 +13,7 @@ Of course, seeds are the obvious answer here, but there are many different advan
 
 * Knowing about how well you have to do to win
   * do you need to take big swings or just do pretty well?  This helps decide whether you want to take a risk on the winter or just pick one of the top few teams and hope that you can ride out the rest with better early bracket picks.
-  *
+  
 * Knowing who other people are picking
 
 The purpose here is to leverage what we know about other people to pick some teams that may be undervalued by the general public and avoid teams that are overvalued. I used the ["Who picked Whom"](http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom) data from ESPN but there are likely other sources that would work equally well. A few ways this plays out:
@@ -24,8 +24,9 @@ The purpose here is to leverage what we know about other people to pick some tea
 
 ## Technologies
 * Python
+* pandas, matplotlib
+* selenium, BeautifulSoup
 * Sqlite
-* 
 
 ## Getting started
 * install python3
@@ -36,12 +37,11 @@ The purpose here is to leverage what we know about other people to pick some tea
   * enhance model to update elo after early round wins (Low priority)
 * knowing how well you have to do to win
   * figure out distribution of points
-    * cleanup JSON data
     * write code to simulate small pool from larger data set
       * write to randomly sample the entries used
       * Maybe write simulation data to database
 * knowing who other people are picking
   * compare expected points versus who picked percentage
-  * estimate homer factor (long way away)
+  * estimate homer factor (Low priority)
 * Implement results into website to make this more user-friendly
 * implement unit testing
