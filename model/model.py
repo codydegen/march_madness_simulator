@@ -475,7 +475,8 @@ class Model:
     d = plt.hist(b["winning_score"], bins=40, cumulative=True)
     plt.figure(2)
     c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
-    plt.show()
+    # plt.show()
+    return a
     # print(average_winning_score)
 
   def create_json_files(self):
@@ -998,14 +999,7 @@ class Simulation_results:
         self.model.simulations_won_by_imported_entries[i] += 1
 
 
-
-
-# Holding a main function removes the global scoping I was using to call 
-# the model In scoring various brackets. I'd like to rearrange this in some way
-# but need to think on how.
 def main():
-
-# t=time.time()
   model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"], gender="mens")
   model.batch_simulate()
   model.create_json_files()
@@ -1016,8 +1010,6 @@ def main():
   model.add_bulk_entries_from_database(15)
   model.add_simulation_results_postprocessing()
   model.output_results()
-
-# t = time.time() - t
 
 if __name__ == '__main__':
   main()
