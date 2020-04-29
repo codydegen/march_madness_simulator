@@ -158,9 +158,6 @@ class Model:
     pass
 
   def create_teams(self):
-    # Not sure why this starts for the root directory and not the location of 
-    # the file.  I would've thought that moving model.py would've necessitated 
-    # changing this path but it didn't.
     current_path = os.path.dirname(__file__)
     team_data = "../team_data/"+str(self.year)+"_all_prepped_data.csv"
     path = os.path.join(current_path, team_data)
@@ -258,7 +255,7 @@ class Model:
             team.expected_points[ep] = round_expected_points
             total_expected_points += round_expected_points
           team.total_expected_points = total_expected_points
-          print(team.name+" expected points: "+str(team.total_expected_points))
+          # print(team.name+" expected points: "+str(team.total_expected_points))
     pass
 
   def output_most_valuable_bracket(self):
@@ -276,7 +273,7 @@ class Model:
     return most_popular_bracket
 
   def update_entry_picks(self):
-    team_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\actual.json'
+    team_data = r'..\\web_scraper\\'+self.gender+str(self.year)+r'\\actual.json'
     # chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
@@ -315,7 +312,7 @@ class Model:
     #   "source" : "Chalk entry"
     # }
 
-    self.entries["actual_results"] = Entry(source=json.dumps(entry), method="json")
+    self.entries["actual_results"] = Entry(model=self, source=json.dumps(entry), method="json")
     # self.entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="json")
     # return actual_results
 
@@ -325,7 +322,7 @@ class Model:
     most_valuable_bracket = self.output_most_valuable_bracket()
     most_popular_bracket = self.output_most_popular_bracket()
     current_path = os.path.dirname(__file__)
-    chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
+    chalk_data = r'..\\web_scraper\\'+self.gender+str(self.year)+r'\\chalk.json'
     chalk_team_data = os.path.join(current_path, chalk_data)
     chalk_results = json.load(open(chalk_team_data, "r"))
     chalk_entry = {
@@ -335,11 +332,11 @@ class Model:
       "method" : "Chalk entry",
       "source" : "Chalk entry"
     }
-    mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
-    mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
-    self.special_entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
-    self.special_entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
-    self.special_entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="json")
+    mvb_source = self.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
+    mpb_source = self.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    self.special_entries["most_valuable_teams"] = Entry(model=self, source=mvb_source, method="json")
+    self.special_entries["most_popular_teams"] = Entry(model=self, source=mpb_source, method="json")
+    self.special_entries["chalk"] = Entry(model=self, source=json.dumps(chalk_entry), method="json")
 
   def analyze_special_entries(self):
     # Add in the results for special brackets including:
@@ -427,7 +424,7 @@ class Model:
       # I don't feel great about the formatting used to add entries, Seems like
       # I should be passing in just the data instead of initializing an object 
       # here. trying to think of a better structure
-      self.add_entry(Entry(method="database", source=entry))
+      self.add_entry(Entry(model=self, method="database", source=entry))
 
   def update_special_entry_score(self, entry, entry_name):
     for region in self.all_teams:
@@ -472,14 +469,14 @@ class Model:
          }
 
     b = df(data=a)
-    print(b)
+    # print(b)
     # c = 
     plt.figure(1)
     d = plt.hist(b["winning_score"], bins=40, cumulative=True)
     plt.figure(2)
     c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
     plt.show()
-    print(average_winning_score)
+    # print(average_winning_score)
 
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
@@ -553,7 +550,7 @@ class Bracket:
     pass
 
   def create_bracket(self):
-    finals = NodeGame(region="Finals")#, model=self.model)
+    finals = NodeGame(region="Finals", model=self.model)
     for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
       finals.add_child(self.add_semis(ff_pairings))
     return finals
@@ -564,7 +561,7 @@ class Bracket:
     child_one = self.add_team(region=pairing[0], round_num=5)
     self.game_pairing = 0
     child_two = self.add_team(region=pairing[1], round_num=5)
-    semi = NodeGame(region="Final Four", children=[child_one, child_two], round_num=6)
+    semi = NodeGame(model=self.model, region="Final Four", children=[child_one, child_two], round_num=6)
     return semi
 
   def add_team(self, region, round_num):
@@ -574,16 +571,16 @@ class Bracket:
       team_one = self.model.all_teams[region][seed_one]
       team_two = self.model.all_teams[region][seed_two]
       if len(team_two) == 2:
-        play_in = NodeGame(region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
-        ro64 = NodeGame(region=region, team_one=team_one[0], children=play_in, round_num=round_num)
+        play_in = NodeGame(model=self.model, region=region, team_one=team_two[0], team_two=team_two[1],round_num=1)
+        ro64 = NodeGame(model=self.model, region=region, team_one=team_one[0], children=play_in, round_num=round_num)
       else:
-        ro64 = NodeGame(region=region, team_one=team_one[0], team_two=team_two[0], round_num=round_num)
+        ro64 = NodeGame(model=self.model, region=region, team_one=team_one[0], team_two=team_two[0], round_num=round_num)
       self.game_pairing += 1
       return ro64
     else:
       team_one = self.add_team(region=region, round_num=round_num-1)
       team_two = self.add_team(region=region, round_num=round_num-1)
-      game = NodeGame(region=region, round_num=round_num, children=[team_one, team_two])
+      game = NodeGame(model=self.model, region=region, round_num=round_num, children=[team_one, team_two])
       return game
     pass
 
@@ -765,12 +762,12 @@ class Game:
   pass
 
 class NodeGame(Game, NodeMixin):
-  def __init__(self, team_one=Team('tbd',0,'tbd',-1,-1), team_two=Team('tbd',0,'tbd',-1,-1), parent=None, winner=None, children=None, region=None, round_num=7):
+  def __init__(self, model, team_one=Team('tbd',0,'tbd',-1,-1), team_two=Team('tbd',0,'tbd',-1,-1), parent=None, winner=None, children=None, region=None, round_num=7):
     super(NodeGame, self).__init__()
     self.team_one = team_one
     self.team_two = team_two
     self.parent = parent
-    # self.model = model
+    self.model = model
     if parent:
       self.round_num = parent.round_num - 1
     else:
@@ -815,7 +812,7 @@ class NodeGame(Game, NodeMixin):
       self.team_two.update_elo(self.team_one, True)
     # pass
     self.update_bracket(winner)
-    self.update_wins(model, self.winner, self.round_num)
+    self.update_wins(self.model, self.winner, self.round_num)
 
   def update_wins(self, bracket, winner, round_number):
     teams = bracket.all_teams[winner.region][winner.seed]
@@ -861,14 +858,15 @@ class NodeGame(Game, NodeMixin):
     elif getattr(self.team_one, criteria)[self.round_num] < getattr(self.team_two, criteria)[self.round_num]:
       self.update_bracket(self.team_two)
     else:
-      print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same "+criteria)
+      # print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same "+criteria)
       if random.random() < 0.5:
         self.update_bracket(self.team_one)
       else:
         self.update_bracket(self.team_two)
     
 class Entry:
-  def __init__(self, method, source):
+  def __init__(self, model, method, source):
+    self.model = model
     if method == "empty":
       raise Exception("unknown method designated for bracket creation")
     elif method == "json":
@@ -909,7 +907,7 @@ class Entry:
     pass
 
   def assign_team_picks_from_database(self, source):
-    team_data = r'..\\team_data\\team_'+model.gender+str(model.year)+'_20200407_0840.json'
+    team_data = r'..\\team_data\\team_'+self.model.gender+str(self.model.year)+'_20200407_0840.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
     teams = json.load(open(new_team_data, "r"))
@@ -1003,26 +1001,23 @@ class Simulation_results:
 
 
 # Holding a main function removes the global scoping I was using to call 
-# the model I'm scoring various brackets. I'd like to rearrange this in some way
+# the model In scoring various brackets. I'd like to rearrange this in some way
 # but need to think on how.
-# def main():
+def main():
 
 # t=time.time()
-model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"], gender="womens")
-model.batch_simulate()
-model.create_json_files()
-model.update_entry_picks()
-model.initialize_special_entries()
-model.analyze_special_entries()
+  model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"], gender="mens")
+  model.batch_simulate()
+  model.create_json_files()
+  model.update_entry_picks()
+  model.initialize_special_entries()
+  model.analyze_special_entries()
 
-model.add_bulk_entries_from_database(15)
-model.add_simulation_results_postprocessing()
-model.output_results()
+  model.add_bulk_entries_from_database(15)
+  model.add_simulation_results_postprocessing()
+  model.output_results()
 
 # t = time.time() - t
 
-print("done")
-
-
-# if __name__ == '__main__':
-#   main()
+if __name__ == '__main__':
+  main()
