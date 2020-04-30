@@ -357,8 +357,8 @@ class Model:
     # Add most valuable and most picked brackets
     most_valuable_bracket = self.output_most_valuable_bracket()
     most_popular_bracket = self.output_most_popular_bracket()
-    mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
-    mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    mvb_source = self.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
+    mpb_source = self.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
     self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
     self.update_special_entry_score(self.entries["most_valuable_teams"])
     self.entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
@@ -467,6 +467,35 @@ class Model:
          'most_valuable_score': self.special_entries["most_valuable_teams"].scores["simulations"]
 
          }
+    all_team_data = {
+      'entryID' : [],
+      'name' : [],
+    }
+    for entry in self.entries['imported_entries']:
+      all_team_data['entryID'].append(entry.entryID)
+      all_team_data['name'].append(entry.name)
+      for i in range(len(entry.scores['simulations'])):
+        key = 'simulation'+str(i)
+        if key not in all_team_data:
+          all_team_data[key] = [entry.scores['simulations'][i]]
+        else:
+          all_team_data[key].append(entry.scores['simulations'][i])
+        pass
+    all_team_data['entryID'].append(-1)
+    all_team_data['name'].append('winning_score')
+    all_team_data['entryID'].append(-2)
+    all_team_data['name'].append('most_valuable_teams')
+    all_team_data['entryID'].append(-3)
+    all_team_data['name'].append('most_popular_teams')
+    all_team_data['entryID'].append(-4)
+    all_team_data['name'].append('chalk')
+    for i in range(len(self.special_entries['most_valuable_teams'].scores['simulations'])):
+      key = 'simulation'+str(i)
+      all_team_data[key].append(self.winning_scores_of_simulations[i])
+      all_team_data[key].append(self.special_entries['most_valuable_teams'].scores['simulations'][i])
+      all_team_data[key].append(self.special_entries['most_popular_teams'].scores['simulations'][i])
+      all_team_data[key].append(self.special_entries['chalk'].scores['simulations'][i])
+    return df(data=all_team_data)
 
     b = df(data=a)
     # print(b)
