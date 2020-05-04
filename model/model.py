@@ -123,7 +123,7 @@ seed_pairings = [[1,16],
                  [2,15]]
 
 class Model:
-  def __init__(self, gender='mens', year=2019, number_simulations=1, scoring_system=scoring_systems["ESPN"]):
+  def __init__(self, gender='mens', year=2019, number_simulations=1, scoring_sys="ESPN"):
     self.gender = gender
     self.year = year 
     self.all_teams = self.create_teams()
@@ -132,7 +132,7 @@ class Model:
     self.game_pairing = 0
     self.number_simulations = number_simulations
     self.completed_simulations = 0
-    self.scoring_system = scoring_system
+    self.scoring_system = scoring_systems[scoring_sys]
 
     self.actual_results = None
     self.simulation_results = []
@@ -343,15 +343,6 @@ class Model:
     # Most valuable bracket, most popular bracket, chalk bracket
     for entry in self.special_entries:
       self.update_special_entry_score(self.special_entries[entry], entry)
-    # most_valuable_bracket = self.output_most_valuable_bracket()
-    # most_popular_bracket = self.output_most_popular_bracket()
-    # mvb_source = model.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
-    # mpb_source = model.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
-    # self.entries["most_valuable_teams"] = Entry(source=mvb_source, method="json")
-    # self.entries["most_popular_teams"] = Entry(source=mpb_source, method="json")
-
-    # self.update_entry_picks()
-
 
   def postprocess_via_popularity_and_value(self):
     # Add most valuable and most picked brackets
@@ -462,39 +453,53 @@ class Model:
           # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
 
   def output_results(self):
-    average_winning_score = statistics.mean(self.winning_scores_of_simulations)
-    a = {'winning_score': self.winning_scores_of_simulations,
-         'most_valuable_score': self.special_entries["most_valuable_teams"].scores["simulations"]
+    def populate_subarray(scoring_array):
+      subarray = []
+      for i in range(len(scoring_array)):
+        subarray.append(scoring_array[i])
+      return subarray
 
-         }
+    def add_data_frame_entry(entryID, name, array_name):
+      all_team_data['entryID'].append(entryID)
+      all_team_data['name'].append(name)
+      all_team_data['simulations'].append(
+        populate_subarray(array_name)
+      )
+
+    # def add_ranking(index):
+    #   array = all_team_data['simulations'][index]
+    #   rank_vector = [0 for i in range(len(array))]
+    #   tuple_array = [(array[i], i) for i in range(len(array))]
+    #   tuple_array.sort(key=lambda x: x[0])
+    #   (rank, n, i) = (1, 1, 0)
+    #   while i < len(array):
+    #     j = i
+    #     while j < len(array) - 1 and tuple_array[j][0] == tuple_array[j+1][0]:
+    #       j += 1
+    #     n = j - i + 1
+    #     for j in range(n):
+    #       shared_index = tuple_array[i+j][1]
+    #       rank_vector[shared_index] = rank + (n - 1) * 0.5
+    #     rank += n
+    #     i += n
+    #   print(" finished ranking of "+str(index))
+    #   return rank_vector
+
     all_team_data = {
       'entryID' : [],
       'name' : [],
+      'simulations' : [],
+      'ranks' : []
     }
     for entry in self.entries['imported_entries']:
-      all_team_data['entryID'].append(entry.entryID)
-      all_team_data['name'].append(entry.name)
-      for i in range(len(entry.scores['simulations'])):
-        key = 'simulation'+str(i)
-        if key not in all_team_data:
-          all_team_data[key] = [entry.scores['simulations'][i]]
-        else:
-          all_team_data[key].append(entry.scores['simulations'][i])
-        pass
-    all_team_data['entryID'].append(-1)
-    all_team_data['name'].append('winning_score')
-    all_team_data['entryID'].append(-2)
-    all_team_data['name'].append('most_valuable_teams')
-    all_team_data['entryID'].append(-3)
-    all_team_data['name'].append('most_popular_teams')
-    all_team_data['entryID'].append(-4)
-    all_team_data['name'].append('chalk')
-    for i in range(len(self.special_entries['most_valuable_teams'].scores['simulations'])):
-      key = 'simulation'+str(i)
-      all_team_data[key].append(self.winning_scores_of_simulations[i])
-      all_team_data[key].append(self.special_entries['most_valuable_teams'].scores['simulations'][i])
-      all_team_data[key].append(self.special_entries['most_popular_teams'].scores['simulations'][i])
-      all_team_data[key].append(self.special_entries['chalk'].scores['simulations'][i])
+      add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'])
+    # all_team_data['ranks'] = [add_ranking(i) for i in range(len(all_team_data['simulations']))]
+    add_data_frame_entry(-1, 'winning_score', self.winning_scores_of_simulations)
+    add_data_frame_entry(-2, 'most_valuable_teams', self.special_entries['most_valuable_teams'].scores['simulations'])
+    add_data_frame_entry(-3, 'most_popular_teams', self.special_entries['most_popular_teams'].scores['simulations'])
+    add_data_frame_entry(-4, 'chalk', self.special_entries['chalk'].scores['simulations'])
+    
+
     return df(data=all_team_data)
 
     b = df(data=a)
@@ -507,6 +512,9 @@ class Model:
     # plt.show()
     return a
     # print(average_winning_score)
+
+  def get_special_wins(self):
+    return self.simulations_won_by_special_entries
 
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
@@ -937,7 +945,7 @@ class Entry:
     pass
 
   def assign_team_picks_from_database(self, source):
-    team_data = r'..\\team_data\\team_'+self.model.gender+str(self.model.year)+'_20200407_0840.json'
+    team_data = r'..\\team_data\\team_'+self.model.gender+str(self.model.year)+'.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
     teams = json.load(open(new_team_data, "r"))
@@ -957,13 +965,12 @@ class Simulation_results:
     self.model = model
     self.simulation_index = index
     self.actual = actual
-    self.score_list = {
-      "entries" : [],
-      # "actual_results" : 0,
-      "most_valuable_teams" : 0,
-      "most_popular_teams" : 0,
-      "chalk" : 0
-    }
+    # self.rank_list = {
+    #   "entries" : [],
+    #   "most_valuable_teams" : 0,
+    #   "most_popular_teams" : 0,
+    #   "chalk" : 0
+    # }
     self.winning_score = 0
     self.winning_index = []
     self.beaten_by = {
@@ -972,9 +979,20 @@ class Simulation_results:
       "most_popular_teams" : False,
       "chalk" : False
     }
-
     self.number_of_entries = len(self.model.entries["imported_entries"])
     self.import_scoring_list()
+
+  def __str__(self):
+    if self.actual:
+      return "Actual results, winning score of "+str(self.winning_score)+" by bracket(s) "+" ".join(str(self.winning_index))
+    else:
+      return "Simulation #"+str(self.simulation_index)+", winning score of "+str(self.winning_score)+" by bracket(s) "+" ".join("{0}".format(n) for n in self.winning_index)
+
+  def __repr__(self):
+    if self.actual:
+      return "Actual results, winning score of "+str(self.winning_score)+" by bracket(s) "+" ".join(self.winning_index)
+    else:
+      return "Sim #"+str(self.simulation_index)+", win score of "+str(self.winning_score)+" by bracket(s) "+" ".join("{0}".format(n) for n in self.winning_index)
 
   def import_scoring_list(self):
     entry_results = []
@@ -995,6 +1013,22 @@ class Simulation_results:
       elif entry_results[-1] == winning_score:
         winning_index.append(len(entry_results) - 1)
         # print("tied winning brackets in simulation: "+str(self.simulation_index))
+    # Populate rank results
+    array = entry_results
+    rank_vector = [0 for i in range(len(array))]
+    tuple_array = [(array[i], i) for i in range(len(array))]
+    tuple_array.sort(reverse=True)
+    (rank, n, i) = (1, 1, 0)
+    while i < len(array):
+      j = i
+      while j < len(array) - 1 and tuple_array[j][0] == tuple_array[j+1][0]:
+        j += 1
+      n = j - i + 1
+      for j in range(n):
+        shared_index = tuple_array[i+j][1]
+        rank_vector[shared_index] = rank + (n - 1) * 0.5
+      rank += n
+      i += n
     
     # Populate special bracket scores
     if self.actual:
@@ -1005,12 +1039,64 @@ class Simulation_results:
       most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["simulations"][self.simulation_index]
       most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["simulations"][self.simulation_index]
       chalk_score = self.model.special_entries["chalk"].scores["simulations"][self.simulation_index]
+    # populate special bracket rankings.  Ranking does not affect actual entry scores.  I.e.:
+    # if The most valuable team bracket scores 1800 and the entry scores are as follows:
+    # score rank
+    # 1820  1
+    # 1810  2
+    # 1790  3
+    # The most valuable team would be ranked third, but the actual rankings will not change.
+    def find_special_rankings(score):
+      lower_bound = -1
+      higher_bound = 10000
+      lower_index = -1
+      higher_index = -1
+      i=0
+      higher_doubles = 0
+      lower_doubles = 0
+      for i in range(len(entry_results)):
+        if entry_results[i] == score:
+          return rank_vector[i]
+        elif entry_results[i] > score:
+          if entry_results[i] < higher_bound:
+            higher_bound = entry_results[i]
+            higher_index = i
+            higher_doubles = 0
+          elif entry_results[i] == higher_bound:
+            higher_doubles += 1
+        elif entry_results[i] < score:
+          if entry_results[i] > lower_bound:
+            lower_bound = entry_results[i]
+            lower_index = i
+            lower_doubles = 0
+          elif entry_results[i] == lower_bound:
+            lower_doubles += 1
+        else:
+          print("error, score incorrect")
+      if higher_index == -1:
+        return 1.0
+      elif lower_index == -1:
+        return float(len(entry_results)) + 1.0
+      else:
+        return rank_vector[higher_index] + 1.0 + 0.5*higher_doubles
+
+
+
+    most_valuable_team_rank = find_special_rankings(most_valuable_team_score)
+    most_popular_team_rank = find_special_rankings(most_popular_team_score)
+    chalk_rank = find_special_rankings(chalk_score)
     self.scoring_list = {
       "entries" : entry_results,
-      # "actual_results" : 0,
       "most_valuable_teams" : most_valuable_team_score,
       "most_popular_teams" : most_popular_team_score,
       "chalk" : chalk_score
+    }
+
+    self.ranking_list = {
+      "entries" : rank_vector,
+      "most_valuable_teams" : most_valuable_team_rank,
+      "most_popular_teams" : most_popular_team_rank,
+      "chalk" : chalk_rank
     }
     for criteria in self.beaten_by:
       if self.scoring_list[criteria] >= winning_score:
@@ -1029,7 +1115,7 @@ class Simulation_results:
 
 
 def main():
-  model = Model(number_simulations=100, scoring_system=scoring_systems["ESPN"], gender="mens")
+  model = Model(number_simulations=100, scoring_sys="ESPN", gender="mens")
   model.batch_simulate()
   model.create_json_files()
   model.update_entry_picks()
