@@ -466,24 +466,16 @@ class Model:
         populate_subarray(array_name)
       )
 
-    # def add_ranking(index):
-    #   array = all_team_data['simulations'][index]
-    #   rank_vector = [0 for i in range(len(array))]
-    #   tuple_array = [(array[i], i) for i in range(len(array))]
-    #   tuple_array.sort(key=lambda x: x[0])
-    #   (rank, n, i) = (1, 1, 0)
-    #   while i < len(array):
-    #     j = i
-    #     while j < len(array) - 1 and tuple_array[j][0] == tuple_array[j+1][0]:
-    #       j += 1
-    #     n = j - i + 1
-    #     for j in range(n):
-    #       shared_index = tuple_array[i+j][1]
-    #       rank_vector[shared_index] = rank + (n - 1) * 0.5
-    #     rank += n
-    #     i += n
-    #   print(" finished ranking of "+str(index))
-    #   return rank_vector
+    def add_rankings():
+      all_team_data['ranks'] = [[] for i in range(len(all_team_data['simulations']))]
+      for simulation in self.simulation_results:
+        
+        for i in range(len(simulation.ranking_list['entries'])):
+          all_team_data['ranks'][i].append(simulation.ranking_list['entries'][i])
+        all_team_data['ranks'][simulation.number_of_entries].append(1.0)
+        all_team_data['ranks'][simulation.number_of_entries+1].append(simulation.ranking_list['most_valuable_teams'])
+        all_team_data['ranks'][simulation.number_of_entries+2].append(simulation.ranking_list['most_popular_teams'])
+        all_team_data['ranks'][simulation.number_of_entries+3].append(simulation.ranking_list['chalk'])
 
     all_team_data = {
       'entryID' : [],
@@ -493,25 +485,13 @@ class Model:
     }
     for entry in self.entries['imported_entries']:
       add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'])
-    # all_team_data['ranks'] = [add_ranking(i) for i in range(len(all_team_data['simulations']))]
     add_data_frame_entry(-1, 'winning_score', self.winning_scores_of_simulations)
     add_data_frame_entry(-2, 'most_valuable_teams', self.special_entries['most_valuable_teams'].scores['simulations'])
     add_data_frame_entry(-3, 'most_popular_teams', self.special_entries['most_popular_teams'].scores['simulations'])
     add_data_frame_entry(-4, 'chalk', self.special_entries['chalk'].scores['simulations'])
-    
+    add_rankings()
 
     return df(data=all_team_data)
-
-    b = df(data=a)
-    # print(b)
-    # c = 
-    plt.figure(1)
-    d = plt.hist(b["winning_score"], bins=40, cumulative=True)
-    plt.figure(2)
-    c = b.plot(kind="scatter", x="winning_score", y="most_valuable_score")
-    # plt.show()
-    return a
-    # print(average_winning_score)
 
   def get_special_wins(self):
     return self.simulations_won_by_special_entries
@@ -1068,9 +1048,9 @@ class Simulation_results:
           if entry_results[i] > lower_bound:
             lower_bound = entry_results[i]
             lower_index = i
-            lower_doubles = 0
-          elif entry_results[i] == lower_bound:
-            lower_doubles += 1
+          #   lower_doubles = 0
+          # elif entry_results[i] == lower_bound:
+          #   lower_doubles += 1
         else:
           print("error, score incorrect")
       if higher_index == -1:
