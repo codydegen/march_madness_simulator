@@ -1033,7 +1033,6 @@ class Simulation_results:
       higher_index = -1
       i=0
       higher_doubles = 0
-      lower_doubles = 0
       for i in range(len(entry_results)):
         if entry_results[i] == score:
           return rank_vector[i]
