@@ -468,20 +468,27 @@ class Model:
 
     def add_rankings():
       all_team_data['ranks'] = [[] for i in range(len(all_team_data['simulations']))]
+      all_team_data['placings'] = [[] for i in range(len(all_team_data['simulations']))]
       for simulation in self.simulation_results:
         
         for i in range(len(simulation.ranking_list['entries'])):
           all_team_data['ranks'][i].append(simulation.ranking_list['entries'][i])
+          all_team_data['placings'][i].append(simulation.placing_list['entries'][i])
         all_team_data['ranks'][simulation.number_of_entries].append(1.0)
         all_team_data['ranks'][simulation.number_of_entries+1].append(simulation.ranking_list['most_valuable_teams'])
         all_team_data['ranks'][simulation.number_of_entries+2].append(simulation.ranking_list['most_popular_teams'])
         all_team_data['ranks'][simulation.number_of_entries+3].append(simulation.ranking_list['chalk'])
+        all_team_data['placings'][simulation.number_of_entries].append(1.0)
+        all_team_data['placings'][simulation.number_of_entries+1].append(simulation.placing_list['most_valuable_teams'])
+        all_team_data['placings'][simulation.number_of_entries+2].append(simulation.placing_list['most_popular_teams'])
+        all_team_data['placings'][simulation.number_of_entries+3].append(simulation.placing_list['chalk'])
 
     all_team_data = {
       'entryID' : [],
       'name' : [],
       'simulations' : [],
-      'ranks' : []
+      'ranks' : [],
+      'placings' : []
     }
     for entry in self.entries['imported_entries']:
       add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'])
@@ -996,6 +1003,7 @@ class Simulation_results:
     # Populate rank results
     array = entry_results
     rank_vector = [0 for i in range(len(array))]
+    placing_vector = [0 for i in range(len(array))]
     tuple_array = [(array[i], i) for i in range(len(array))]
     tuple_array.sort(reverse=True)
     (rank, n, i) = (1, 1, 0)
@@ -1007,6 +1015,7 @@ class Simulation_results:
       for j in range(n):
         shared_index = tuple_array[i+j][1]
         rank_vector[shared_index] = rank + (n - 1) * 0.5
+        placing_vector[shared_index] = rank
       rank += n
       i += n
     
@@ -1026,7 +1035,7 @@ class Simulation_results:
     # 1810  2
     # 1790  3
     # The most valuable team would be ranked third, but the actual rankings will not change.
-    def find_special_rankings(score):
+    def find_special_rankings(score, placing=False):
       lower_bound = -1
       higher_bound = 10000
       lower_index = -1
@@ -1035,7 +1044,10 @@ class Simulation_results:
       higher_doubles = 0
       for i in range(len(entry_results)):
         if entry_results[i] == score:
-          return rank_vector[i]
+          if placing:
+            return placing_vector[i]
+          else:
+            return rank_vector[i]
         elif entry_results[i] > score:
           if entry_results[i] < higher_bound:
             higher_bound = entry_results[i]
@@ -1047,23 +1059,32 @@ class Simulation_results:
           if entry_results[i] > lower_bound:
             lower_bound = entry_results[i]
             lower_index = i
-          #   lower_doubles = 0
-          # elif entry_results[i] == lower_bound:
-          #   lower_doubles += 1
         else:
           print("error, score incorrect")
       if higher_index == -1:
-        return 1.0
+        if placing:
+          return 1
+        else:
+          return 1.0
       elif lower_index == -1:
-        return float(len(entry_results)) + 1.0
+        if placing:
+          return len(entry_results) + 1
+        else:
+          return float(len(entry_results)) + 1.0
       else:
-        return rank_vector[higher_index] + 1.0 + 0.5*higher_doubles
+        if placing:
+          return round(rank_vector[higher_index] + 0.5*higher_doubles)+1
+        else:
+          return rank_vector[higher_index] + 1.0 + 0.5*higher_doubles
 
 
 
     most_valuable_team_rank = find_special_rankings(most_valuable_team_score)
     most_popular_team_rank = find_special_rankings(most_popular_team_score)
     chalk_rank = find_special_rankings(chalk_score)
+    most_valuable_team_placing = find_special_rankings(most_valuable_team_score, True)
+    most_popular_team_placing = find_special_rankings(most_popular_team_score, True)
+    chalk_placing = find_special_rankings(chalk_score, True)
     self.scoring_list = {
       "entries" : entry_results,
       "most_valuable_teams" : most_valuable_team_score,
@@ -1076,6 +1097,13 @@ class Simulation_results:
       "most_valuable_teams" : most_valuable_team_rank,
       "most_popular_teams" : most_popular_team_rank,
       "chalk" : chalk_rank
+    }
+
+    self.placing_list = {
+      "entries" : placing_vector,
+      "most_valuable_teams" : most_valuable_team_placing,
+      "most_popular_teams" : most_popular_team_placing,
+      "chalk" : chalk_placing
     }
     for criteria in self.beaten_by:
       if self.scoring_list[criteria] >= winning_score:

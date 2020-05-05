@@ -88,11 +88,11 @@ def prepare_table(results):
         score_array.append(get_sub_placings(chalk_rank, place, inclusive, percentile, average))
         return score_array
 
-    most_valuable_rank = get_array_from_dataframe(results, 'ranks', 'most_valuable_teams')
+    most_valuable_rank = get_array_from_dataframe(results, 'placings', 'most_valuable_teams')
     most_valuable_rank.sort()
-    most_popular_rank = get_array_from_dataframe(results, 'ranks', 'most_popular_teams')
+    most_popular_rank = get_array_from_dataframe(results, 'placings', 'most_popular_teams')
     most_popular_rank.sort()
-    chalk_rank = get_array_from_dataframe(results, 'ranks', 'chalk')
+    chalk_rank = get_array_from_dataframe(results, 'placings', 'chalk')
     chalk_rank.sort()
     data = {
         'Bracket Type' : {
