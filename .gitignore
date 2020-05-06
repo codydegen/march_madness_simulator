@@ -128,5 +128,5 @@ dmypy.json
 
 # virtual environments
 /venv
-
+startup.bat
 # End of https://www.gitignore.io/api/python,visualstudiocode
