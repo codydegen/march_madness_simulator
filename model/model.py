@@ -15,6 +15,7 @@ import csv
 import sqlite3
 import statistics
 import matplotlib.pyplot as plt
+import random
 
 
 final_four_pairings = {
@@ -452,53 +453,234 @@ class Model:
           # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
           # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
 
-  def output_results(self):
+  def output_results(self, entries=None, sims=None):
+    initial_ranking=True
+    if not entries:
+      entry_list = self.entries['imported_entries']
+      entry_index_list = [i for i in range(len(entry_list))]
+    else:
+      entry_list = random.sample(self.entries['imported_entries'], entries)
+      entry_index_list = [entry.index for entry in entry_list]
+      initial_ranking = False
+
+    if not sims:
+      simulation_list = self.simulation_results
+      sim_index_list = [i for i in range(len(simulation_list))]
+    else:
+      simulation_list = random.sample(self.simulation_results, sims)
+      sim_index_list = [sim.simulation_index for sim in simulation_list]
+      initial_ranking = False
+
     def populate_subarray(scoring_array):
       subarray = []
       for i in range(len(scoring_array)):
         subarray.append(scoring_array[i])
       return subarray
 
-    def add_data_frame_entry(entryID, name, array_name):
+    def add_data_frame_entry(entryID, name, array_name, sim_index_list):
       all_team_data['entryID'].append(entryID)
       all_team_data['name'].append(name)
-      all_team_data['simulations'].append(
-        populate_subarray(array_name)
-      )
+      simulation_results = []
+      for sim in sim_index_list:
+        simulation_results.append(array_name[sim])
+      all_team_data['simulations'].append(simulation_results)
 
     def add_rankings():
       all_team_data['ranks'] = [[] for i in range(len(all_team_data['simulations']))]
       all_team_data['placings'] = [[] for i in range(len(all_team_data['simulations']))]
-      for simulation in self.simulation_results:
+      if entries and sims:
+        print(" subset ")
+      else:
+        for simulation in simulation_list:
+          for i in entry_index_list:
+            all_team_data['ranks'][i].append(simulation.ranking_list['entries'][i])
+            all_team_data['placings'][i].append(simulation.placing_list['entries'][i])
+          all_team_data['ranks'][len(entry_list)].append(1.0)
+          all_team_data['ranks'][len(entry_list)+1].append(simulation.ranking_list['most_valuable_teams'])
+          all_team_data['ranks'][len(entry_list)+2].append(simulation.ranking_list['most_popular_teams'])
+          all_team_data['ranks'][len(entry_list)+3].append(simulation.ranking_list['chalk'])
+          all_team_data['placings'][len(entry_list)].append(1)
+          all_team_data['placings'][len(entry_list)+1].append(simulation.placing_list['most_valuable_teams'])
+          all_team_data['placings'][len(entry_list)+2].append(simulation.placing_list['most_popular_teams'])
+          all_team_data['placings'][len(entry_list)+3].append(simulation.placing_list['chalk'])
+
+    def rerank(entry_list):
+      # Use ranking algorithm for limited scoring data set
+      all_team_data['ranks'] = [[] for i in range(len(entry_list)+4)]
+      all_team_data['placings'] = [[] for i in range(len(entry_list)+4)]
+      winning_score_list = []
+      winning_index_list = []
+      winning_score = 0
+      winning_index = [-1]
+      # Populate imported entry scores
+      # for entry in entry_list:
+      #   # if self.actual:
+      #   #   entry_results.append(entry.scores["actual_results"])
+      #   # else:
+      #   #   entry_results.append(entry.scores["simulations"][self.simulation_index])
+      #   if entry.scores['actual_results'] > winning_score:
+      #     winning_score = entry_results[-1]
+      #     winning_index = [len(entry_results) - 1]
+      #   elif entry_results[-1] == winning_score:
+      #     winning_index.append(len(entry_results) - 1)
+          # print("tied winning brackets in simulation: "+str(self.simulation_index))
+      # Populate rank results
+
+      for simulation in simulation_list:
+        array = [entry.scores['simulations'][simulation.simulation_index] for entry in entry_list]
+        # most_valuable_score = simulation.scoring_list['most_valuable_teams']
+        # most_popular_score = simulation.scoring_list['most_popular_teams']
+        # chalk_score = simulation.scoring_list['chalk_teams']
+        special_scores = {
+          'scores' : {
+            'most_valuable_teams' : simulation.scoring_list['most_valuable_teams'],
+            'most_popular_teams' : simulation.scoring_list['most_popular_teams'],
+            'chalk' : simulation.scoring_list['chalk'],
+          },
+          'ranks' : {
+            'most_valuable_teams' : -1.0,
+            'most_popular_teams' : -1.0,
+            'chalk' : -1.0,
+          },
+          'placings' : {
+            'most_valuable_teams' : -1,
+            'most_popular_teams' : -1,
+            'chalk' : -1,
+          }
+        }
+        rank_vector = [0 for i in range(len(array))]
+        placing_vector = [0 for i in range(len(array))]
+        tuple_array = [(array[i], i) for i in range(len(array))]
+        tuple_array.sort(reverse=True)
+        winning_score = tuple_array[0][0]
+        winning_index = [entry_list[tuple_array[0][1]].index]
+        (rank, n, i) = (1, 1, 0)
+
+        for special in special_scores['scores'].keys():
+          if special_scores['scores'][special] > winning_score:
+            special_scores['ranks'][special] = 1.0
+            special_scores['placings'][special] = 1
+          elif special_scores['scores'][special] < tuple_array[-1][0]:
+            special_scores['ranks'][special] = float(len(tuple_array))
+            special_scores['placings'][special] = len(tuple_array)
+        while i < len(array):
+          j = i
+          while j < len(array) - 1 and tuple_array[j][0] == tuple_array[j+1][0]:
+            j += 1
+            if tuple_array[j][0] == winning_score:
+              winning_index.append(entry_list[tuple_array[j][1]].index)
+          n = j - i + 1
+          for j in range(n):
+            shared_index = tuple_array[i+j][1]
+            rank_vector[shared_index] = rank + (n - 1) * 0.5
+            placing_vector[shared_index] = rank
+          for special in special_scores['scores'].keys():
+            if special_scores['scores'][special] == tuple_array[i+j][0]:
+              special_scores['ranks'][special] = rank_vector[shared_index]
+              special_scores['placings'][special] = rank
+            elif special_scores['scores'][special] < tuple_array[i][0] and special_scores['scores'][special] > tuple_array[i-1][0]:
+              # print(i,j,tuple_array[i+j-1][0],tuple_array[i+j][0])
+              assert tuple_array[i][0]>=tuple_array[i-1][0]
+              special_scores['ranks'][special] = rank_vector[shared_index]
+              special_scores['placings'][special] = rank
+          rank += n
+          i += n
         
-        for i in range(len(simulation.ranking_list['entries'])):
-          all_team_data['ranks'][i].append(simulation.ranking_list['entries'][i])
-          all_team_data['placings'][i].append(simulation.placing_list['entries'][i])
-        all_team_data['ranks'][simulation.number_of_entries].append(1.0)
-        all_team_data['ranks'][simulation.number_of_entries+1].append(simulation.ranking_list['most_valuable_teams'])
-        all_team_data['ranks'][simulation.number_of_entries+2].append(simulation.ranking_list['most_popular_teams'])
-        all_team_data['ranks'][simulation.number_of_entries+3].append(simulation.ranking_list['chalk'])
-        all_team_data['placings'][simulation.number_of_entries].append(1.0)
-        all_team_data['placings'][simulation.number_of_entries+1].append(simulation.placing_list['most_valuable_teams'])
-        all_team_data['placings'][simulation.number_of_entries+2].append(simulation.placing_list['most_popular_teams'])
-        all_team_data['placings'][simulation.number_of_entries+3].append(simulation.placing_list['chalk'])
+        
+        for special in special_scores['scores'].keys():
+          
+          if special_scores['scores'][special] > winning_score:
+            special_scores['ranks'][special] = 1.0
+            special_scores['placings'][special] = 1
+            print("a",special, special_scores['ranks'][special], special_scores['scores'][special])
+          elif special_scores['scores'][special] < tuple_array[-1][0]:
+            special_scores['ranks'][special] = float(len(tuple_array))
+            special_scores['placings'][special] = len(tuple_array)
+            print("b",special, special_scores['ranks'][special], special_scores['scores'][special])
+          elif special_scores['scores'][special] == winning_score:
+            special_scores['ranks'][special] = rank_vector[tuple_array[0][1]]
+            special_scores['placings'][special] = placing_vector[tuple_array[0][1]]
+            print("c",special, special_scores['ranks'][special], special_scores['scores'][special])
+          else:
+            i = 1
+            while i < len(tuple_array):
+              if tuple_array[i-1][0] > special_scores['scores'][special] > tuple_array[i][0]:
+                multiples = 1
+                while tuple_array[i+multiples][0] == tuple_array[i][0]:
+                  multiples +=1
+                special_scores['ranks'][special] = i+(multiples-1)*0.5+1
+                special_scores['placings'][special] = i+1
+                print("d",i,special, special_scores['ranks'][special], special_scores['scores'][special])
+                i = len(tuple_array)
+                
+              elif special_scores['scores'][special] == tuple_array[i][0]:
+                special_scores['ranks'][special] = rank_vector[tuple_array[i][1]]
+                special_scores['placings'][special] = placing_vector[tuple_array[i][1]]
+                print("e",i,special, special_scores['ranks'][special], special_scores['scores'][special])
+                i = len(tuple_array)
+              else:
+                i += 1
+
+
+
+        for special in special_scores['scores'].keys():
+          assert special_scores['ranks'][special] > 0
+          assert not (special_scores['ranks'][special] == 1 and special_scores['scores'][special] < winning_score)
+        for i in range(len(entry_list)):
+          all_team_data['ranks'][i].append(rank_vector[i])
+          all_team_data['placings'][i].append(placing_vector[i])
+        winning_score_list.append(winning_score)
+        winning_index_list.append(winning_index)
+        all_team_data['ranks'][len(entry_list)].append(1.0)
+        all_team_data['placings'][len(entry_list)].append(1)
+        all_team_data['ranks'][len(entry_list)+1].append(special_scores['ranks']['most_valuable_teams'])
+        all_team_data['placings'][len(entry_list)+1].append(special_scores['placings']['most_valuable_teams'])
+        all_team_data['ranks'][len(entry_list)+2].append(special_scores['ranks']['most_popular_teams'])
+        all_team_data['placings'][len(entry_list)+2].append(special_scores['placings']['most_popular_teams'])
+        all_team_data['ranks'][len(entry_list)+3].append(special_scores['ranks']['chalk'])
+        all_team_data['placings'][len(entry_list)+3].append(special_scores['placings']['chalk'])
+        
+        # most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["simulations"][simulation.simulation_index]
+        # most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["simulations"][simulation.simulation_index]
+        # chalk_score = self.model.special_entries["chalk"].scores["simulations"][self.simulation_index]
+        # print('Simulation '+str(simulation.simulation_index)+" done")
+
+        # Populate special bracket scores
+      # print(all_team_data)
+        # if self.actual:
+        #   most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["actual_results"]
+        #   most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["actual_results"]
+        #   chalk_score = self.model.special_entries["chalk"].scores["actual_results"]
+        # else:
+        #   
+
+
+
+    # Update winning scores
 
     all_team_data = {
       'entryID' : [],
       'name' : [],
       'simulations' : [],
-      'ranks' : [],
-      'placings' : []
+      # 'ranks' : [],
+      # 'placings' : []
     }
-    for entry in self.entries['imported_entries']:
-      add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'])
-    add_data_frame_entry(-1, 'winning_score', self.winning_scores_of_simulations)
-    add_data_frame_entry(-2, 'most_valuable_teams', self.special_entries['most_valuable_teams'].scores['simulations'])
-    add_data_frame_entry(-3, 'most_popular_teams', self.special_entries['most_popular_teams'].scores['simulations'])
-    add_data_frame_entry(-4, 'chalk', self.special_entries['chalk'].scores['simulations'])
-    add_rankings()
-
-    return df(data=all_team_data)
+    # sim_index_list = [sim.simulation_index for sim in simulation_list]
+    # entry_index_list = [entry.index for entry in entry_list]
+    for entry in entry_list:
+      add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'], sim_index_list)
+    # output_data = df(data=all_team_data)
+    add_data_frame_entry(-1, 'winning_score', self.winning_scores_of_simulations, sim_index_list)
+    add_data_frame_entry(-2, 'most_valuable_teams', self.special_entries['most_valuable_teams'].scores['simulations'], sim_index_list)
+    add_data_frame_entry(-3, 'most_popular_teams', self.special_entries['most_popular_teams'].scores['simulations'], sim_index_list)
+    add_data_frame_entry(-4, 'chalk', self.special_entries['chalk'].scores['simulations'], sim_index_list)
+    if initial_ranking:
+      add_rankings()
+    else:
+      rerank(entry_list)
+    output_data = df(data=all_team_data)
+    # print(output_data)
+    return output_data
 
   def get_special_wins(self):
     return self.simulations_won_by_special_entries
@@ -553,9 +735,17 @@ class Model:
       # preliminary = preliminary.replace("]","")
       with open(json_path+"preliminary_results.json", "w") as preliminary_file:
         json.dump(json.loads(preliminary), preliminary_file)
-
-
     pass
+
+  def analyze_sublist(self, all_results, entries, sims):
+    print(entries, sims)
+    # special_results = all_results[-4:]
+    # entry_results = all_results[:-4]
+    partial_entry_results = random.sample(self.entries['imported_entries'], entries)
+    partial_simulation_results = random.sample(self.simulation_results, sims)
+    return self.output_results(entries, sims)
+
+
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -914,6 +1104,9 @@ class Entry:
       "chalk" : 0
     }
     # model.add_entry(self)
+
+  def __repr__(self):
+    return "Entry Ind "+str(self.index)+" entryID "+str(self.entryID)
 
   def import_entry_json(self, source):
     b = json.loads(source)

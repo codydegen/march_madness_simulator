@@ -2,7 +2,7 @@ import model.model as model
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.figure_factory as ff
@@ -30,12 +30,26 @@ def prepare_ranks_graph(entry_results, special_results):
     most_valuable_rank = get_array_from_dataframe(special_results, 'ranks', 'most_valuable_teams')
     most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
     chalk_rank = get_array_from_dataframe(special_results, 'ranks', 'chalk')
-
+    
+    # Following code is needed to prevent singular matrix error
+    # if most_valuable_rank == chalk_rank:
+    #     chalk_rank[0]+=chalk_rank[0]+.0000001
+    #     most_valuable_rank[0]+=most_valuable_rank[0]-.0000001
     hist_data = [most_valuable_rank, most_popular_rank, chalk_rank]
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
-    figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
-                                show_curve=True, show_hist=True, bin_size=1, 
-                                histnorm='probability')
+    try:
+        figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
+                                    show_curve=True, show_hist=True, bin_size=1, 
+                                    histnorm='probability')
+    except:
+        print('Singular matrix error')
+        for i in range(len(most_valuable_rank)):
+            if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
+                most_valuable_rank[i] += most_valuable_rank[i]+.0000000001
+        figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
+                            show_curve=True, show_hist=True, bin_size=1, 
+                            histnorm='probability')
+        
     graph = dcc.Graph(
         id='ranking-graph',
         figure=figure
@@ -59,7 +73,7 @@ def prepare_scores_graph(entry_results, special_results):
     )
     return graph
 
-def prepare_table(entry_results, special_results):
+def prepare_table(entry_results, special_results, sims):
 
     def get_placings(place, inclusive=False, percentile=False, average=False):
 
@@ -79,7 +93,7 @@ def prepare_table(entry_results, special_results):
                     i+=1
                 elif score==place:
                     i+=1
-            return str(round(i/number_simulations*100, 1))+"%"
+            return str(round(i/sims*100, 1))+"%"
             
 
         score_array = []
@@ -94,13 +108,13 @@ def prepare_table(entry_results, special_results):
     most_popular_rank.sort()
     chalk_rank = get_array_from_dataframe(special_results, 'placings', 'chalk')
     chalk_rank.sort()
-    data = {
-        'Bracket Type' : {
-            'Most Valuable Teams': [],
-            'Most Popular Teams': [],
-            'Chalk': [],
-        }
-    }
+    # data = {
+    #     'Bracket Type' : {
+    #         'Most Valuable Teams': [],
+    #         'Most Popular Teams': [],
+    #         'Chalk': [],
+    #     }
+    # }
     columns = dict(values=['Bracket Type', '1st Places', '2nd Places', '3rd Places', 'Top 5', 'Top 10', 'Top 5%', 'Average Placing'],
                     align=['center','center'],
                     )
@@ -121,36 +135,53 @@ def prepare_table(entry_results, special_results):
     figure = go.Figure(data=[go.Table(header=columns, 
                                     cells=cells,
                                     columnwidth=[80,40,40,40,40,40,40,40])])
-    graph = dcc.Graph(
-        id='scoring-table',
-        figure=figure
-    )
+    # graph = dcc.Graph(
+    #     id='scoring-table',
+    #     figure=figure
+    # )
     return figure
 
-def prepare_number_teams_input():
-    teams_input = dcc.Input(
-        id='number-teams-input',
+def prepare_number_entries_input():
+    entries_input = dcc.Input(
+        id='number-entries-input',
         type='number',
-        value=number_teams,
-        max=number_teams,
+        value=number_entries,
+        max=number_entries,
         min=0
     )
-    return teams_input 
+    return entries_input 
+
+def prepare_number_simulations_input():
+    simulations_input = dcc.Input(
+        id='number-simulations-input',
+        type='number',
+        value=number_simulations,
+        max=number_simulations,
+        min=0
+    )
+    return simulations_input 
+
+def prepare_run_button_input():
+    button = html.Button(id='run-input', n_clicks=0, children='Submit')
+    return button
 
 @app.callback(
     Output(component_id='scoring-table', component_property='figure'),
-    [Input(component_id='number-teams-input', component_property='value')]
-)
-def update_table(input_value):
-    filtered_dataframe = random_subsample(input_value)
-    print(input_value)
+    [Input(component_id='run-input', component_property='n_clicks')],
+    [State('number-entries-input', 'value'),
+     State('number-simulations-input', 'value')])
+def update_table(n_clicks, entry_input, simulations_input):
+    filtered_dataframe = m.analyze_sublist(all_results, entry_input, simulations_input)
+    # print(input_value)
     # filtered_dataframe['']
-    return prepare_table(filtered_dataframe, special_results)
+    filtered_special_results = filtered_dataframe[-4:]
+    filtered_entry_results = filtered_dataframe[:-4]
+    return prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
 
 if __name__ == '__main__':
     # model.main()
-    number_simulations = 20
-    number_teams = 100
+    number_simulations = 5000
+    number_entries = 100
     m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="ESPN")
     m.batch_simulate()
     print("sims done")
@@ -158,23 +189,26 @@ if __name__ == '__main__':
     m.update_entry_picks()
     m.initialize_special_entries()
     m.analyze_special_entries()
-    m.add_bulk_entries_from_database(number_teams)
+    m.add_bulk_entries_from_database(number_entries)
     m.add_simulation_results_postprocessing()
-
 
 
     all_results = m.output_results()
     special_wins = m.get_special_wins()
     special_results = all_results[-4:]
     entry_results = all_results[:-4]
-    sub_results = random_subsample(number_teams)
+    # sub_results = m.analyze_sublist(number_sub_sims, number_subteams)
+
+    # sub_results = random_subsample(number_entries)
     figures = []
-    figures.append(prepare_ranks_graph(sub_results, special_results))
-    figures.append(prepare_number_teams_input())
+    figures.append(prepare_ranks_graph(entry_results, special_results))
+    figures.append(prepare_number_entries_input())
+    figures.append(prepare_number_simulations_input())
+    figures.append(prepare_run_button_input())
     figures.append(dcc.Graph(
         id='scoring-table',
-        figure=prepare_table(sub_results, special_results)))
-    figures.append(prepare_scores_graph(sub_results, special_results))
+        figure=prepare_table(entry_results, special_results, number_simulations)))
+    figures.append(prepare_scores_graph(entry_results, special_results))
 
     app.layout = html.Div(figures)
     app.run_server(debug=True)
