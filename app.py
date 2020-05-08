@@ -31,10 +31,7 @@ def prepare_ranks_graph(entry_results, special_results):
     most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
     chalk_rank = get_array_from_dataframe(special_results, 'ranks', 'chalk')
     
-    # Following code is needed to prevent singular matrix error
-    # if most_valuable_rank == chalk_rank:
-    #     chalk_rank[0]+=chalk_rank[0]+.0000001
-    #     most_valuable_rank[0]+=most_valuable_rank[0]-.0000001
+
     hist_data = [most_valuable_rank, most_popular_rank, chalk_rank]
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
@@ -44,6 +41,7 @@ def prepare_ranks_graph(entry_results, special_results):
     except:
         print('Singular matrix error')
         for i in range(len(most_valuable_rank)):
+            # Following code is potentially needed to prevent singular matrix error
             if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
                 most_valuable_rank[i] += most_valuable_rank[i]+.0000000001
         figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
