@@ -22,7 +22,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+server = app.server
 def get_array_from_dataframe(frame, array_type, data_type):
     return frame[frame['name']==data_type][array_type].values[0]
 
