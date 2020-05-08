@@ -39,7 +39,7 @@ def prepare_ranks_graph(entry_results, special_results):
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
         figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
-                                    show_curve=True, show_hist=True, bin_size=1, 
+                                    show_curve=True, show_hist=True, bin_size=10, 
                                     histnorm='probability')
     except:
         print('Singular matrix error')
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     # model.main()
     number_simulations = 10000
     number_entries = 100
-    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="degen_bracket")
+    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="ESPN")
     m.batch_simulate()
     print("sims done")
     m.create_json_files()
