@@ -48,10 +48,6 @@ def prepare_ranks_graph(entry_results, special_results):
                             show_curve=True, show_hist=True, bin_size=1, 
                             histnorm='probability')
         
-    # graph = dcc.Graph(
-    #     id='ranking-graph',
-    #     figure=figure
-    # )
     return figure
 
 def prepare_scores_graph(entry_results, special_results):
@@ -65,10 +61,7 @@ def prepare_scores_graph(entry_results, special_results):
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                                 show_curve=True, bin_size=1, 
                                 histnorm='probability')
-    # graph = dcc.Graph(
-    #     id='winning-score-graph',
-    #     figure=figure
-    # )
+
     return figure
 
 def prepare_table(entry_results, special_results, sims):
