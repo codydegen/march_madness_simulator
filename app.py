@@ -36,7 +36,7 @@ def prepare_ranks_graph(entry_results, special_results):
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
         figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
-                                    show_curve=True, show_hist=True, bin_size=10, 
+                                    show_curve=True, show_hist=True, bin_size=1, 
                                     histnorm='probability')
     except:
         print('Singular matrix error')
@@ -126,10 +126,7 @@ def prepare_table(entry_results, special_results, sims):
     figure = go.Figure(data=[go.Table(header=columns, 
                                     cells=cells,
                                     columnwidth=[80,40,40,40,40,40,40,40])])
-    # graph = dcc.Graph(
-    #     id='scoring-table',
-    #     figure=figure
-    # )
+
     return figure
 
 def prepare_number_entries_input():
