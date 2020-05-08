@@ -188,7 +188,7 @@ if __name__ == '__main__':
     # model.main()
     number_simulations = 10000
     number_entries = 100
-    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="degen_bracket")
+    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="ESPN")
     m.batch_simulate()
     print("sims done")
     m.create_json_files()
