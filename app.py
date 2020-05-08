@@ -65,7 +65,7 @@ def prepare_scores_graph(entry_results, special_results):
     hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
     group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
-                                show_curve=True, bin_size=1, 
+                                show_curve=True, bin_size=10, 
                                 histnorm='probability')
     # graph = dcc.Graph(
     #     id='winning-score-graph',
