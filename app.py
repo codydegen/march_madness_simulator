@@ -50,11 +50,11 @@ def prepare_ranks_graph(entry_results, special_results):
                             show_curve=True, show_hist=True, bin_size=1, 
                             histnorm='probability')
         
-    graph = dcc.Graph(
-        id='ranking-graph',
-        figure=figure
-    )
-    return graph
+    # graph = dcc.Graph(
+    #     id='ranking-graph',
+    #     figure=figure
+    # )
+    return figure
 
 def prepare_scores_graph(entry_results, special_results):
     overall_winning_score_values = get_array_from_dataframe(special_results, 'simulations', 'winning_score')
@@ -65,13 +65,13 @@ def prepare_scores_graph(entry_results, special_results):
     hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
     group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
-                                show_curve=True, bin_size=10, 
+                                show_curve=True, bin_size=1, 
                                 histnorm='probability')
-    graph = dcc.Graph(
-        id='winning-score-graph',
-        figure=figure
-    )
-    return graph
+    # graph = dcc.Graph(
+    #     id='winning-score-graph',
+    #     figure=figure
+    # )
+    return figure
 
 def prepare_table(entry_results, special_results, sims):
 
@@ -166,7 +166,9 @@ def prepare_run_button_input():
     return button
 
 @app.callback(
-    Output(component_id='scoring-table', component_property='figure'),
+    [Output(component_id='ranking-graph', component_property='figure'),
+     Output(component_id='scoring-table', component_property='figure'),
+     Output(component_id='winning-score-graph', component_property='figure')],
     [Input(component_id='run-input', component_property='n_clicks')],
     [State('number-entries-input', 'value'),
      State('number-simulations-input', 'value')])
@@ -176,13 +178,17 @@ def update_table(n_clicks, entry_input, simulations_input):
     # filtered_dataframe['']
     filtered_special_results = filtered_dataframe[-4:]
     filtered_entry_results = filtered_dataframe[:-4]
-    return prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
+    ranks_figure = prepare_ranks_graph(filtered_entry_results, filtered_special_results)
+    scoring_table = prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
+    winning_score_figure = prepare_scores_graph(filtered_entry_results, filtered_special_results)
+    print("update complete")
+    return ranks_figure, scoring_table, winning_score_figure
 
 if __name__ == '__main__':
     # model.main()
-    number_simulations = 5000
+    number_simulations = 10000
     number_entries = 100
-    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="ESPN")
+    m = model.Model(number_simulations=number_simulations, gender="mens", scoring_sys="degen_bracket")
     m.batch_simulate()
     print("sims done")
     m.create_json_files()
@@ -201,14 +207,18 @@ if __name__ == '__main__':
 
     # sub_results = random_subsample(number_entries)
     figures = []
-    figures.append(prepare_ranks_graph(entry_results, special_results))
+    figures.append(dcc.Graph(
+        id='ranking-graph',
+        figure=prepare_ranks_graph(entry_results, special_results)))
     figures.append(prepare_number_entries_input())
     figures.append(prepare_number_simulations_input())
     figures.append(prepare_run_button_input())
     figures.append(dcc.Graph(
         id='scoring-table',
         figure=prepare_table(entry_results, special_results, number_simulations)))
-    figures.append(prepare_scores_graph(entry_results, special_results))
+    figures.append(dcc.Graph(
+        id='winning-score-graph',
+        figure=prepare_scores_graph(entry_results, special_results)))
 
     app.layout = html.Div(figures)
     app.run_server(debug=True)

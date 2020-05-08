@@ -592,31 +592,33 @@ class Model:
           if special_scores['scores'][special] > winning_score:
             special_scores['ranks'][special] = 1.0
             special_scores['placings'][special] = 1
-            print("a",special, special_scores['ranks'][special], special_scores['scores'][special])
+            # print("a",special, special_scores['ranks'][special], special_scores['scores'][special])
           elif special_scores['scores'][special] < tuple_array[-1][0]:
             special_scores['ranks'][special] = float(len(tuple_array))
             special_scores['placings'][special] = len(tuple_array)
-            print("b",special, special_scores['ranks'][special], special_scores['scores'][special])
+            # print("b",special, special_scores['ranks'][special], special_scores['scores'][special])
           elif special_scores['scores'][special] == winning_score:
             special_scores['ranks'][special] = rank_vector[tuple_array[0][1]]
             special_scores['placings'][special] = placing_vector[tuple_array[0][1]]
-            print("c",special, special_scores['ranks'][special], special_scores['scores'][special])
+            # print("c",special, special_scores['ranks'][special], special_scores['scores'][special])
           else:
             i = 1
             while i < len(tuple_array):
               if tuple_array[i-1][0] > special_scores['scores'][special] > tuple_array[i][0]:
-                multiples = 1
-                while tuple_array[i+multiples][0] == tuple_array[i][0]:
+                multiples = 0
+                while tuple_array[i+multiples][0] == tuple_array[i][0] and i < len(tuple_array):
                   multiples +=1
+                  if i+multiples == len(tuple_array):
+                    break
                 special_scores['ranks'][special] = i+(multiples-1)*0.5+1
                 special_scores['placings'][special] = i+1
-                print("d",i,special, special_scores['ranks'][special], special_scores['scores'][special])
+                # print("d",i,special, special_scores['ranks'][special], special_scores['scores'][special])
                 i = len(tuple_array)
                 
               elif special_scores['scores'][special] == tuple_array[i][0]:
                 special_scores['ranks'][special] = rank_vector[tuple_array[i][1]]
                 special_scores['placings'][special] = placing_vector[tuple_array[i][1]]
-                print("e",i,special, special_scores['ranks'][special], special_scores['scores'][special])
+                # print("e",i,special, special_scores['ranks'][special], special_scores['scores'][special])
                 i = len(tuple_array)
               else:
                 i += 1
@@ -741,8 +743,8 @@ class Model:
     print(entries, sims)
     # special_results = all_results[-4:]
     # entry_results = all_results[:-4]
-    partial_entry_results = random.sample(self.entries['imported_entries'], entries)
-    partial_simulation_results = random.sample(self.simulation_results, sims)
+    # partial_entry_results = random.sample(self.entries['imported_entries'], entries)
+    # partial_simulation_results = random.sample(self.simulation_results, sims)
     return self.output_results(entries, sims)
 
 
