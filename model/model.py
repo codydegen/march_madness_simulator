@@ -689,10 +689,11 @@ class Model:
 
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
+    print(current_path)
     json_connector = r"..\\web_scraper\\"+self.gender+str(self.year)+r"\\"
     json_path = os.path.join(current_path, json_connector)
-    
-
+    print(json_path)
+    print(json_path+"chalk.json")
     if not os.path.exists(json_path+"chalk.json"):
       print("writing chalk.json file.")
       chalk = self.export_teams_to_json(expanded=False)
