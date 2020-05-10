@@ -172,8 +172,8 @@ def update_table(n_clicks, entry_input, simulations_input):
     print("update complete")
     return ranks_figure, scoring_table, winning_score_figure
 
-number_simulations = 100
-number_entries = 100
+number_simulations = 10000
+number_entries = 1000
 m = model.Model(number_simulations=number_simulations, gender="womens", scoring_sys="ESPN")
 m.batch_simulate()
 print("sims done")
