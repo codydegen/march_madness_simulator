@@ -172,41 +172,42 @@ def update_table(n_clicks, entry_input, simulations_input):
     print("update complete")
     return ranks_figure, scoring_table, winning_score_figure
 
+number_simulations = 100
+number_entries = 100
+m = model.Model(number_simulations=number_simulations, gender="womens", scoring_sys="ESPN")
+m.batch_simulate()
+print("sims done")
+m.create_json_files()
+m.update_entry_picks()
+m.initialize_special_entries()
+m.analyze_special_entries()
+m.add_bulk_entries_from_database(number_entries)
+m.add_simulation_results_postprocessing()
+
+
+all_results = m.output_results()
+special_wins = m.get_special_wins()
+special_results = all_results[-4:]
+entry_results = all_results[:-4]
+# sub_results = m.analyze_sublist(number_sub_sims, number_subteams)
+
+# sub_results = random_subsample(number_entries)
+figures = []
+figures.append(dcc.Graph(
+    id='ranking-graph',
+    figure=prepare_ranks_graph(entry_results, special_results)))
+figures.append(prepare_number_entries_input())
+figures.append(prepare_number_simulations_input())
+figures.append(prepare_run_button_input())
+figures.append(dcc.Graph(
+    id='scoring-table',
+    figure=prepare_table(entry_results, special_results, number_simulations)))
+figures.append(dcc.Graph(
+    id='winning-score-graph',
+    figure=prepare_scores_graph(entry_results, special_results)))
+
+app.layout = html.Div(figures)
+
 if __name__ == '__main__':
     # model.main()
-    number_simulations = 10000
-    number_entries = 100
-    m = model.Model(number_simulations=number_simulations, gender="womens", scoring_sys="ESPN")
-    m.batch_simulate()
-    print("sims done")
-    m.create_json_files()
-    m.update_entry_picks()
-    m.initialize_special_entries()
-    m.analyze_special_entries()
-    m.add_bulk_entries_from_database(number_entries)
-    m.add_simulation_results_postprocessing()
-
-
-    all_results = m.output_results()
-    special_wins = m.get_special_wins()
-    special_results = all_results[-4:]
-    entry_results = all_results[:-4]
-    # sub_results = m.analyze_sublist(number_sub_sims, number_subteams)
-
-    # sub_results = random_subsample(number_entries)
-    figures = []
-    figures.append(dcc.Graph(
-        id='ranking-graph',
-        figure=prepare_ranks_graph(entry_results, special_results)))
-    figures.append(prepare_number_entries_input())
-    figures.append(prepare_number_simulations_input())
-    figures.append(prepare_run_button_input())
-    figures.append(dcc.Graph(
-        id='scoring-table',
-        figure=prepare_table(entry_results, special_results, number_simulations)))
-    figures.append(dcc.Graph(
-        id='winning-score-graph',
-        figure=prepare_scores_graph(entry_results, special_results)))
-
-    app.layout = html.Div(figures)
     app.run_server(debug=True)
