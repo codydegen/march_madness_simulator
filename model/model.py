@@ -274,8 +274,8 @@ class Model:
     return most_popular_bracket
 
   def update_entry_picks(self):
-    team_data = r'..\\web_scraper\\'+self.gender+str(self.year)+r'\\actual.json'
-    # chalk_data = r'..\\web_scraper\\'+model.gender+str(model.year)+r'\\chalk.json'
+    team_data = r'../web_scraper/'+self.gender+str(self.year)+r'/actual.json'
+    # chalk_data = r'../web_scraper/'+model.gender+str(model.year)+r'/chalk.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
     # chalk_team_data = os.path.join(current_path, chalk_data)
@@ -323,7 +323,7 @@ class Model:
     most_valuable_bracket = self.output_most_valuable_bracket()
     most_popular_bracket = self.output_most_popular_bracket()
     current_path = os.path.dirname(__file__)
-    chalk_data = r'..\\web_scraper\\'+self.gender+str(self.year)+r'\\chalk.json'
+    chalk_data = r'../web_scraper/'+self.gender+str(self.year)+r'/chalk.json'
     chalk_team_data = os.path.join(current_path, chalk_data)
     chalk_results = json.load(open(chalk_team_data, "r"))
     chalk_entry = {
@@ -400,7 +400,7 @@ class Model:
 
   def add_bulk_entries_from_database(self, number_entries):
     current_path = os.path.dirname(__file__)
-    database = r"..\\db\\"+self.gender+str(self.year)+".db"
+    database = r"../db/"+self.gender+str(self.year)+".db"
     database_path = os.path.join(current_path, database)
     db = sqlite3.connect(database_path)
     current = db.cursor()
@@ -690,7 +690,7 @@ class Model:
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
     print(current_path)
-    json_connector = r"..\\web_scraper\\"+self.gender+str(self.year)+r"\\"
+    json_connector = r"../web_scraper/"+self.gender+str(self.year)+r"/"
     json_path = os.path.join(current_path, json_connector)
     print(json_path)
     print(json_path+"chalk.json")
@@ -1128,7 +1128,7 @@ class Entry:
     pass
 
   def assign_team_picks_from_database(self, source):
-    team_data = r'..\\team_data\\team_'+self.model.gender+str(self.model.year)+'.json'
+    team_data = r'../team_data/team_'+self.model.gender+str(self.model.year)+'.json'
     current_path = os.path.dirname(__file__)
     new_team_data = os.path.join(current_path, team_data)
     teams = json.load(open(new_team_data, "r"))
