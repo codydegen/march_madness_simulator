@@ -17,7 +17,7 @@ import statistics
 import matplotlib.pyplot as plt
 import random
 
-
+# Final four pairings
 final_four_pairings = {
   "mens" : {
     2019 : 
@@ -149,7 +149,6 @@ class Model:
     }
     self.entries = {
       "imported_entries": [],
-      # "actual_results": None,
       "most_valuable_teams": None,
       "most_popular_teams": None,
       "chalk": None,
@@ -170,9 +169,9 @@ class Model:
       
     else:
       print(" couldn't find data")
-      # TBD, hook up data scraping to this
+      # In original iterations of this I would've attached scraping natively to 
+      # this but now I don't think that that really makes sense
       raise Exception("There is no data for this combination of team and year")
-      # a = self.prep_data(path)
 
     team_data = pd.read_csv(path)
     gender_specific = team_data[team_data.gender == self.gender]
@@ -226,13 +225,10 @@ class Model:
 # simulation methods
   def batch_simulate(self):
     for i in range(0, self.number_simulations):
-      # t = time.time()
       self.sim_bracket.simulate_bracket()
       self.update_scores()
       self.reset_bracket()
       self.completed_simulations += 1
-      # if self.completed_simulations%100 == 0:
-      # print("simulation number "+str(i)+" completed.")
     self.calculate_expected_points()
 
   def update_scores(self):
@@ -256,19 +252,17 @@ class Model:
             team.expected_points[ep] = round_expected_points
             total_expected_points += round_expected_points
           team.total_expected_points = total_expected_points
-          # print(team.name+" expected points: "+str(team.total_expected_points))
     pass
 
   def output_most_valuable_bracket(self):
-    # (TD) this can be exported into JSON format without going into the intermediate bracket step
+    # TODO this can be exported into JSON format without going into the intermediate bracket step
     self.calculate_expected_points()
     most_valuable_bracket = Bracket(self)
     self.postprocess_bracket(most_valuable_bracket, "expected_points")
     return most_valuable_bracket
 
   def output_most_popular_bracket(self):
-    # (TD) this can be exported into JSON format without going into the intermediate bracket step
-    # self.calculate_expected_points()
+    # TODO this can be exported into JSON format without going into the intermediate bracket step
     most_popular_bracket = Bracket(self)
     self.postprocess_bracket(most_popular_bracket, "picked_frequency")
     return most_popular_bracket
@@ -287,16 +281,8 @@ class Model:
         for team in actual_results[region][seed]:
           if self.all_teams[region][seed][0].name == team:
             self.all_teams[region][seed][0].entry_picks["actual_results"] = actual_results[region][seed][team]
-            # self.all_teams[region][seed][0].entry_picks["chalk"] = chalk_results[region][seed][team]
-            # self.all_teams[region][seed][0].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
-            # self.all_teams[region][seed][0].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
           else:
             self.all_teams[region][seed][1].entry_picks["actual_results"] = actual_results[region][seed][team]
-            # self.all_teams[region][seed][1].entry_picks["chalk"] = chalk_results[region][seed][team]
-            # self.all_teams[region][seed][1].entry_picks["most_valuable_teams"] = self.entries["most_valuable_teams"].team_picks[region][seed][team]
-            # self.all_teams[region][seed][1].entry_picks["most_popular_teams"] = self.entries["most_popular_teams"].team_picks[region][seed][team]
-    # actual_results = Bracket(self)
-    # self.update_entry_picks(actual_results)
     entry = {
       "team_picks" : actual_results,
       "name" : "Actual results",
@@ -304,18 +290,7 @@ class Model:
       "method" : "Actual results",
       "source" : "Actual results"
     }
-
-    # chalk_entry = {
-    #   "team_picks" : chalk_results,
-    #   "name" : "Chalk entry",
-    #   "entryID" : -1,
-    #   "method" : "Chalk entry",
-    #   "source" : "Chalk entry"
-    # }
-
     self.entries["actual_results"] = Entry(model=self, source=json.dumps(entry), method="json")
-    # self.entries["chalk"] = Entry(source=json.dumps(chalk_entry), method="json")
-    # return actual_results
 
   def initialize_special_entries(self):
     # Initialize the special entries including:
@@ -364,15 +339,15 @@ class Model:
     pass
 
   def prep_data(self, path):
-    # placeholder function for now
-    
+    # Probably never going to use this
     return None
   
 
-  # my intuition is that I should be able to to both this and the other recursive bracket manipulation functions using callbacks I'm not familiar enough with Python to know how to. May come back to this
+  # my intuition is that I should be able to to both this and the other 
+  # recursive bracket manipulation functions using callbacks I'm not familiar 
+  # enough with Python to know how to. May come back to this
   def postprocess_bracket(self, bracket, criteria):
     self.postprocess_recursion(bracket.bracket, criteria)
-    # bracket.bracket.root.postprocess_pick_team()
     pass
   
   def postprocess_recursion(self, node, criteria):
@@ -398,6 +373,7 @@ class Model:
     self.update_imported_entry_score(entry)
     # self.
 
+# TODO Make this incremental potentially
   def add_bulk_entries_from_database(self, number_entries):
     current_path = os.path.dirname(__file__)
     database = r"../db/"+self.gender+str(self.year)+".db"
@@ -428,32 +404,32 @@ class Model:
                 entry.scores["simulations"].append(0)
               entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.special_entries[entry_name])]
             entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.special_entries[entry_name])]
-            # entry.scores["chalk"] += self.scoring_system["cumulative"][min(team.entry_picks["chalk"], team.entry_picks["imported_entries"][entry.index])]
-            # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
-            # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
-            # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
 
   def update_imported_entry_score(self, entry):
     # update the scoring list for the passed in entry.
-    # print('team name, sim results, entry results')
     for region in self.all_teams:
       for seed in self.all_teams[region]:
         for team in self.all_teams[region][seed]:
           while len(team.entry_picks["imported_entries"]) < entry.index+1:
             team.entry_picks["imported_entries"].append(-1)
           team.entry_picks["imported_entries"][entry.index] = entry.team_picks[team.region][team.seed][team.name]
-          # print(team.name, team.simulation_results[0], )
           for i in range(0, len(team.simulation_results)):
             if len(entry.scores["simulations"]) <= i:
               entry.scores["simulations"].append(0)
             entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks["imported_entries"][entry.index])]
           entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.entry_picks["imported_entries"][entry.index])]
-          # entry.scores["chalk"] += self.scoring_system["cumulative"][min(team.entry_picks["chalk"], team.entry_picks["imported_entries"][entry.index])]
-          # entry.scores["most_valuable_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_valuable_teams"], team.entry_picks["imported_entries"][entry.index])]
-          # entry.scores["most_popular_teams"] += self.scoring_system["cumulative"][min(team.entry_picks["most_popular_teams"], team.entry_picks["imported_entries"][entry.index])]
-          # print(team.name, team.simulation_results[0], team.entry_picks[entry.index], entry.scores[0])
 
+# Output is a data frame which has the simulation results for each entry as well
+# as the special entries
+# Todo The general structuring of outputting of results, especially the sorting
+# of ranks is pretty inefficient. This would be a potential place to really 
+# improve the efficiency of the program.
   def output_results(self, entries=None, sims=None):
+    # output_results is used both For initial rankings and also for further 
+    # postprocessing of subsets. Initial rankings are already ranked and so I 
+    # don't want to go through the trouble of doing that again.  
+    # The initial_ranking variables a boolean to check whether this is the 
+    # first time things are ranked.
     initial_ranking=True
     if not entries:
       entry_list = self.entries['imported_entries']
@@ -470,12 +446,6 @@ class Model:
       simulation_list = random.sample(self.simulation_results, sims)
       sim_index_list = [sim.simulation_index for sim in simulation_list]
       initial_ranking = False
-
-    def populate_subarray(scoring_array):
-      subarray = []
-      for i in range(len(scoring_array)):
-        subarray.append(scoring_array[i])
-      return subarray
 
     def add_data_frame_entry(entryID, name, array_name, sim_index_list):
       all_team_data['entryID'].append(entryID)
@@ -512,25 +482,9 @@ class Model:
       winning_index_list = []
       winning_score = 0
       winning_index = [-1]
-      # Populate imported entry scores
-      # for entry in entry_list:
-      #   # if self.actual:
-      #   #   entry_results.append(entry.scores["actual_results"])
-      #   # else:
-      #   #   entry_results.append(entry.scores["simulations"][self.simulation_index])
-      #   if entry.scores['actual_results'] > winning_score:
-      #     winning_score = entry_results[-1]
-      #     winning_index = [len(entry_results) - 1]
-      #   elif entry_results[-1] == winning_score:
-      #     winning_index.append(len(entry_results) - 1)
-          # print("tied winning brackets in simulation: "+str(self.simulation_index))
-      # Populate rank results
 
       for simulation in simulation_list:
         array = [entry.scores['simulations'][simulation.simulation_index] for entry in entry_list]
-        # most_valuable_score = simulation.scoring_list['most_valuable_teams']
-        # most_popular_score = simulation.scoring_list['most_popular_teams']
-        # chalk_score = simulation.scoring_list['chalk_teams']
         special_scores = {
           'scores' : {
             'most_valuable_teams' : simulation.scoring_list['most_valuable_teams'],
@@ -579,7 +533,6 @@ class Model:
               special_scores['ranks'][special] = rank_vector[shared_index]
               special_scores['placings'][special] = rank
             elif special_scores['scores'][special] < tuple_array[i][0] and special_scores['scores'][special] > tuple_array[i-1][0]:
-              # print(i,j,tuple_array[i+j-1][0],tuple_array[i+j][0])
               assert tuple_array[i][0]>=tuple_array[i-1][0]
               special_scores['ranks'][special] = rank_vector[shared_index]
               special_scores['placings'][special] = rank
@@ -588,7 +541,6 @@ class Model:
         
         
         for special in special_scores['scores'].keys():
-          
           if special_scores['scores'][special] > winning_score:
             special_scores['ranks'][special] = 1.0
             special_scores['placings'][special] = 1
@@ -623,8 +575,6 @@ class Model:
               else:
                 i += 1
 
-
-
         for special in special_scores['scores'].keys():
           assert special_scores['ranks'][special] > 0
           assert not (special_scores['ranks'][special] == 1 and special_scores['scores'][special] < winning_score)
@@ -641,25 +591,8 @@ class Model:
         all_team_data['placings'][len(entry_list)+2].append(special_scores['placings']['most_popular_teams'])
         all_team_data['ranks'][len(entry_list)+3].append(special_scores['ranks']['chalk'])
         all_team_data['placings'][len(entry_list)+3].append(special_scores['placings']['chalk'])
-        
-        # most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["simulations"][simulation.simulation_index]
-        # most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["simulations"][simulation.simulation_index]
-        # chalk_score = self.model.special_entries["chalk"].scores["simulations"][self.simulation_index]
-        # print('Simulation '+str(simulation.simulation_index)+" done")
-
-        # Populate special bracket scores
-      # print(all_team_data)
-        # if self.actual:
-        #   most_valuable_team_score = self.model.special_entries["most_valuable_teams"].scores["actual_results"]
-        #   most_popular_team_score = self.model.special_entries["most_popular_teams"].scores["actual_results"]
-        #   chalk_score = self.model.special_entries["chalk"].scores["actual_results"]
-        # else:
-        #   
-
-
 
     # Update winning scores
-
     all_team_data = {
       'entryID' : [],
       'name' : [],
@@ -667,11 +600,8 @@ class Model:
       # 'ranks' : [],
       # 'placings' : []
     }
-    # sim_index_list = [sim.simulation_index for sim in simulation_list]
-    # entry_index_list = [entry.index for entry in entry_list]
     for entry in entry_list:
       add_data_frame_entry(entry.entryID, entry.name, entry.scores['simulations'], sim_index_list)
-    # output_data = df(data=all_team_data)
     add_data_frame_entry(-1, 'winning_score', self.winning_scores_of_simulations, sim_index_list)
     add_data_frame_entry(-2, 'most_valuable_teams', self.special_entries['most_valuable_teams'].scores['simulations'], sim_index_list)
     add_data_frame_entry(-3, 'most_popular_teams', self.special_entries['most_popular_teams'].scores['simulations'], sim_index_list)
@@ -681,19 +611,17 @@ class Model:
     else:
       rerank(entry_list)
     output_data = df(data=all_team_data)
-    # print(output_data)
     return output_data
 
   def get_special_wins(self):
     return self.simulations_won_by_special_entries
 
+# Helper functions for creating json files necessary.  Shouldn't be used except
+# when preparing another year's data.
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
-    # print(current_path)
     json_connector = r"../web_scraper/"+self.gender+str(self.year)+r"/"
     json_path = os.path.join(current_path, json_connector)
-    # print(json_path)
-    # print(json_path+"chalk.json")
     if not os.path.exists(json_path+"chalk.json"):
       print("writing chalk.json file.")
       chalk = self.export_teams_to_json(expanded=False)
@@ -708,12 +636,11 @@ class Model:
       empty = self.export_teams_to_json(expanded=False, empty=True)
       empty = empty.replace("[","")
       empty = empty.replace("]","")
-      # This one is to concatenate two teams with the same seed
       empty = empty.replace("}, {", ", ") 
       empty = json.loads(empty)
       with open(json_path+"empty.json", "w") as empty_file:
         json.dump(empty, empty_file)
-        print('''Note: If this is for the men's bracket, you must update the play in teams (losers of the play in game has zero winds instead of one)''')
+        print('''Note: If this is for the men's bracket, you must update the play in teams (losers of the play in game has zero wins instead of one)''')
     if not os.path.exists(json_path+"reverse_lookup.json"):
       print("writing reverse_lookup.json file.")
       with open(json_path+"empty.json", "r") as empty_file:
@@ -734,18 +661,12 @@ class Model:
     if not os.path.exists(json_path+"preliminary_results.json"):
       print("writing preliminary_results.json file.")
       preliminary = self.export_teams_to_json(array=True)
-      # preliminary = preliminary.replace("[","")
-      # preliminary = preliminary.replace("]","")
       with open(json_path+"preliminary_results.json", "w") as preliminary_file:
         json.dump(json.loads(preliminary), preliminary_file)
     pass
 
   def analyze_sublist(self, all_results, entries, sims):
     print(entries, sims)
-    # special_results = all_results[-4:]
-    # entry_results = all_results[:-4]
-    # partial_entry_results = random.sample(self.entries['imported_entries'], entries)
-    # partial_simulation_results = random.sample(self.simulation_results, sims)
     return self.output_results(entries, sims)
 
 
@@ -756,6 +677,7 @@ class Bracket:
     self.model = model
     if method == "empty":
       self.bracket = self.create_bracket()
+    # These methods could be used in the future but are not necessary right now
     elif method == "json":
       raise Exception("unknown method designated for bracket creation, creating empty bracket")
       # self.bracket = self.import_bracket_json(source)
@@ -767,6 +689,8 @@ class Bracket:
       # self.bracket = create_bracket()
     pass
 
+# Workflow is to create the finals node, add the two semi final nodes 
+# in a small for loop, And then create each individual region recursively.
   def create_bracket(self):
     finals = NodeGame(region="Finals", model=self.model)
     for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
@@ -874,7 +798,10 @@ class Bracket:
   def import_bracket_url(self):
     pass
 
-
+# The team object. In general a big concern I have is that some data that is 
+# held in each of these objects should probably be held in entry or simulation 
+# object instead.  At this point is probably too late to change anything but 
+# probably a good lesson learned for the future.
 class Team:
   def __init__(self, name, seed, region, elo, picked_frequency):
     self.name = name
@@ -909,9 +836,6 @@ class Team:
     self.entry_picks = {
       "imported_entries" : [],
       "actual_results" : 0,
-      # "most_valuable_teams" : 0,
-      # "most_popular_teams" : 0,
-      # "chalk" : 0
     }
     self.special_entries = {
       "most_valuable_teams": None,
@@ -924,11 +848,11 @@ class Team:
     return str(self.seed)+" "+str(self.name)+ " "+str(self.elo)+" EP: "+str(self.total_expected_points)
 
   def __repr__(self):
-    # return "Name: "+str(self.name)+"\nseed: "+str(self.seed)+"\nRegion: "+str(self.region)+"\nRating: "+str(self.elo)
     return str(self.seed)+" "+str(self.name)+ " "+str(self.elo)
 
   def update_elo(self, team_two, winner):
-    # update elo for future rounds based on game outcome. not sure how to do this for now so no update to elo will occur
+    # update elo for future rounds based on game outcome. 
+    # Not sure how to do this for now so no update to elo will occur
     pass
 
   def toJSON(self, expanded=True, empty=False, array=False):
@@ -1008,12 +932,12 @@ class NodeGame(Game, NodeMixin):
 
   def toJSON(self):
     exporter = JsonExporter(sort_keys=True, default=lambda o: o.toJSON())
-    # c = exporter.export(self.root)
     return exporter.export(self.root)
 
   def simulate_game(self):
-    # simulate the outcome of the game using 538's ELO system ( sans travel adjustment)
-    # as seen here https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
+    # simulate the outcome of the game using 538's ELO system 
+    # (sans travel adjustment) as seen here 
+    # https://fivethirtyeight.com/methodology/how-our-march-madness-predictions-work-2/
 
     # make sure the game doesn't already have a winner
     assert not self.winner, "game between "+str(self.team_one)+" and  "+str(self.team_two)+" already has been played."
@@ -1036,7 +960,8 @@ class NodeGame(Game, NodeMixin):
     teams = bracket.all_teams[winner.region][winner.seed]
     if len(teams)==1:
       team = teams[0]
-      # if there was no play in game, increment round one win total to keep it aligned
+      # if there was no play in game, increment round one win total to keep it 
+      # aligned
       if round_number == 2:
         team.wins[1]  = bracket.number_simulations
     else:
@@ -1070,18 +995,26 @@ class NodeGame(Game, NodeMixin):
     pass
 
   def postprocess_pick_team(self, criteria):
-    # between two teams in a matchup, pick the team with more of the given criteria. Used to visualize results
+    # between two teams in a matchup, pick the team with more of the given 
+    # criteria. Used to visualize results
     if getattr(self.team_one, criteria)[self.round_num] > getattr(self.team_two, criteria)[self.round_num]:
       self.update_bracket(self.team_one)
     elif getattr(self.team_one, criteria)[self.round_num] < getattr(self.team_two, criteria)[self.round_num]:
       self.update_bracket(self.team_two)
     else:
-      # print("Teams "+self.team_one.name+" and "+self.team_two.name+" have the same "+criteria)
+      # If the criteria is exactly the same than just pick a random team.
+      # Normally only happens when the criteria is so close to zero that it 
+      # gets rounded (like a late-round matchup between big underdogs) 
+      # So not to impactful overall
       if random.random() < 0.5:
         self.update_bracket(self.team_one)
       else:
         self.update_bracket(self.team_two)
     
+# Object used for a given entry, whether that be filled out bracket or a 
+# bracket using postprocessed data.  In hindsight would it have been better to
+# have the real entries and simulated entries be subclasses of 
+# a base Entry class? maybe.
 class Entry:
   def __init__(self, model, method, source):
     self.model = model
@@ -1106,7 +1039,6 @@ class Entry:
       "most_popular_teams" : 0,
       "chalk" : 0
     }
-    # model.add_entry(self)
 
   def __repr__(self):
     return "Entry Ind "+str(self.index)+" entryID "+str(self.entryID)
@@ -1143,21 +1075,17 @@ class Entry:
           i += 1
     return team_picks
 
+# The simulation results class. Contains results for each Entry filled out as 
+# well as information pertaining to the winners and any special brackets 
+# filled out.
 class Simulation_results:
   def __init__(self, model, actual=False, index=-1):
     self.model = model
     self.simulation_index = index
     self.actual = actual
-    # self.rank_list = {
-    #   "entries" : [],
-    #   "most_valuable_teams" : 0,
-    #   "most_popular_teams" : 0,
-    #   "chalk" : 0
-    # }
     self.winning_score = 0
     self.winning_index = []
     self.beaten_by = {
-      # "actual_results" : False,
       "most_valuable_teams" : False,
       "most_popular_teams" : False,
       "chalk" : False
@@ -1195,7 +1123,6 @@ class Simulation_results:
         winning_index = [len(entry_results) - 1]
       elif entry_results[-1] == winning_score:
         winning_index.append(len(entry_results) - 1)
-        # print("tied winning brackets in simulation: "+str(self.simulation_index))
     # Populate rank results
     array = entry_results
     rank_vector = [0 for i in range(len(array))]
@@ -1304,7 +1231,6 @@ class Simulation_results:
     for criteria in self.beaten_by:
       if self.scoring_list[criteria] >= winning_score:
         self.beaten_by[criteria] = True
-        # print(criteria+" would have won simulation "+str(self.simulation_index))
         self.model.simulations_won_by_special_entries[criteria] += 1
     self.winning_score = winning_score
     self.winning_index = winning_index

@@ -12,20 +12,18 @@ import scipy
 import math
 from pandas import DataFrame as df
 
-def random_subsample(n):
-    subsample = entry_results.sample(n)
-    return subsample
-
-
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
 server = app.server
+
+# Helper function
+# TODO There is probably a more effective way of doing this in pandas 
 def get_array_from_dataframe(frame, array_type, data_type):
     return frame[frame['name']==data_type][array_type].values[0]
 
+# Ranks graph function
 def prepare_ranks_graph(entry_results, special_results):
     most_valuable_rank = get_array_from_dataframe(special_results, 'ranks', 'most_valuable_teams')
     most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
@@ -47,9 +45,9 @@ def prepare_ranks_graph(entry_results, special_results):
         figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
                             show_curve=True, show_hist=True, bin_size=1, 
                             histnorm='probability')
-        
     return figure
 
+# Scores graph function
 def prepare_scores_graph(entry_results, special_results):
     overall_winning_score_values = get_array_from_dataframe(special_results, 'simulations', 'winning_score')
     chalk_values = get_array_from_dataframe(special_results, 'simulations', 'chalk')
@@ -61,9 +59,9 @@ def prepare_scores_graph(entry_results, special_results):
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                                 show_curve=True, bin_size=10, 
                                 histnorm='probability')
-
     return figure
 
+# Table preparation function
 def prepare_table(entry_results, special_results, sims):
 
     def get_placings(place, inclusive=False, percentile=False, average=False):
@@ -86,30 +84,24 @@ def prepare_table(entry_results, special_results, sims):
                     i+=1
             return str(round(i/sims*100, 1))+"%"
             
-
         score_array = []
         score_array.append(get_sub_placings(most_valuable_rank, place, inclusive, percentile, average))
         score_array.append(get_sub_placings(most_popular_rank, place, inclusive, percentile, average))
         score_array.append(get_sub_placings(chalk_rank, place, inclusive, percentile, average))
         return score_array
 
+    # Get rankings and then sort them
+    # TODO this could eventually be modularized using a dictionary to allow 
+    # additional entries to be added to the table
     most_valuable_rank = get_array_from_dataframe(special_results, 'placings', 'most_valuable_teams')
     most_valuable_rank.sort()
     most_popular_rank = get_array_from_dataframe(special_results, 'placings', 'most_popular_teams')
     most_popular_rank.sort()
     chalk_rank = get_array_from_dataframe(special_results, 'placings', 'chalk')
     chalk_rank.sort()
-    # data = {
-    #     'Bracket Type' : {
-    #         'Most Valuable Teams': [],
-    #         'Most Popular Teams': [],
-    #         'Chalk': [],
-    #     }
-    # }
-    columns = dict(values=['Bracket Type', '1st Places', '2nd Places', '3rd Places', 'Top 5', 'Top 10', 'Top 5%', 'Average Placing'],
-                    align=['center','center'],
-                    )
+
     bracket_type = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
+    # Get placings for various positions
     first_places = get_placings(1)
     second_places = get_placings(2)
     third_places = get_placings(3)
@@ -117,16 +109,17 @@ def prepare_table(entry_results, special_results, sims):
     top_tens = get_placings(10,inclusive=True)
     top_five_percentile = get_placings(5, percentile=True)
     average = get_placings(0, average=True)
+
+    columns = dict(values=['Bracket Type', '1st Places', '2nd Places', '3rd Places', 'Top 5', 'Top 10', 'Top 5%', 'Average Placing'],
+                    align=['center','center'],
+                    )
     cells = dict(values=[bracket_type, first_places, second_places, third_places, top_fives, top_tens, top_five_percentile, average],
                 align=['center','center'],
                 height=30,
                 )
-    # figure_data = df.from_dict(data, orient='index', columns=columns)
-
     figure = go.Figure(data=[go.Table(header=columns, 
                                     cells=cells,
                                     columnwidth=[80,40,40,40,40,40,40,40])])
-
     return figure
 
 def prepare_number_entries_input():
@@ -153,6 +146,7 @@ def prepare_run_button_input():
     button = html.Button(id='run-input', n_clicks=0, children='Submit')
     return button
 
+# Call back to update once results change
 @app.callback(
     [Output(component_id='ranking-graph', component_property='figure'),
      Output(component_id='scoring-table', component_property='figure'),
@@ -162,8 +156,6 @@ def prepare_run_button_input():
      State('number-simulations-input', 'value')])
 def update_table(n_clicks, entry_input, simulations_input):
     filtered_dataframe = m.analyze_sublist(all_results, entry_input, simulations_input)
-    # print(input_value)
-    # filtered_dataframe['']
     filtered_special_results = filtered_dataframe[-4:]
     filtered_entry_results = filtered_dataframe[:-4]
     ranks_figure = prepare_ranks_graph(filtered_entry_results, filtered_special_results)

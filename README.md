@@ -24,24 +24,25 @@ The purpose here is to leverage what we know about other people to pick some tea
 
 ## Technologies
 * Python
-* pandas, matplotlib
 * selenium, BeautifulSoup
 * Sqlite
+* pandas
+* Dash, plotly
+* Heroku
 
 ## Getting started
-* install python3
-* pip install -r REQUIREMENTS --user
+* Find the deployed website at http://cd-march-madness.herokuapp.com/
+* Or run locally by
+  * install python3
+  * pip install -r requirements.txt --user
+  * python -m app
+  * See further documentation on workflow here 
 
 ## To-Do
+* Better visualization of results
 * knowing who the best teams are
   * enhance model to update elo after early round wins (Low priority)
-* knowing how well you have to do to win
-  * figure out distribution of points
-    * write code to simulate small pool from larger data set
-      * write to randomly sample the entries used
-      * Maybe write simulation data to database
 * knowing who other people are picking
   * compare expected points versus who picked percentage
   * estimate homer factor (Low priority)
-* Implement results into website to make this more user-friendly
-* implement unit testing
+* implement unit testing ( should be high-priority but this project is going on for so long that it'll probably end up not happening )
