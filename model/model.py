@@ -507,6 +507,7 @@ class Model:
         tuple_array = [(array[i], i) for i in range(len(array))]
         tuple_array.sort(reverse=True)
         winning_score = tuple_array[0][0]
+        # all_team_data['simulations'][len(entry_list)] = winning_score
         winning_index = [entry_list[tuple_array[0][1]].index]
         (rank, n, i) = (1, 1, 0)
 
@@ -583,6 +584,7 @@ class Model:
           all_team_data['placings'][i].append(placing_vector[i])
         winning_score_list.append(winning_score)
         winning_index_list.append(winning_index)
+        all_team_data['simulations'][len(entry_list)] = winning_score_list
         all_team_data['ranks'][len(entry_list)].append(1.0)
         all_team_data['placings'][len(entry_list)].append(1)
         all_team_data['ranks'][len(entry_list)+1].append(special_scores['ranks']['most_valuable_teams'])
@@ -1244,16 +1246,17 @@ class Simulation_results:
 
 
 def main():
-  model = Model(number_simulations=100, scoring_sys="ESPN", gender="mens")
-  model.batch_simulate()
-  model.create_json_files()
-  model.update_entry_picks()
-  model.initialize_special_entries()
-  model.analyze_special_entries()
-
-  model.add_bulk_entries_from_database(15)
-  model.add_simulation_results_postprocessing()
-  model.output_results()
+  print("test")
+  # model = Model(number_simulations=100, scoring_sys="ESPN", gender="mens")
+  # model.batch_simulate()
+  # model.create_json_files()
+  # model.update_entry_picks()
+  # model.initialize_special_entries()
+  # model.analyze_special_entries()
+  # model.add_bulk_entries_from_database(15)
+  # model.add_simulation_results_postprocessing()
+  # model.output_results()
+  pass
 
 if __name__ == '__main__':
   main()

@@ -15,9 +15,10 @@ from pandas import DataFrame as df
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+# app.layout = html.Div(children=[
+#     html.H1(children='Hello Dash')]
+#     )
 server = app.server
-
 # Helper function
 # TODO There is probably a more effective way of doing this in pandas 
 def get_array_from_dataframe(frame, array_type, data_type):
@@ -164,7 +165,7 @@ def update_table(n_clicks, entry_input, simulations_input):
     print("update complete")
     return ranks_figure, scoring_table, winning_score_figure
 
-number_simulations = 1000
+number_simulations = 10000
 number_entries = 100
 m = model.Model(number_simulations=number_simulations, gender="womens", scoring_sys="ESPN")
 m.batch_simulate()
@@ -202,4 +203,7 @@ app.layout = html.Div(figures)
 
 if __name__ == '__main__':
     # model.main()
-    app.run_server(debug=True)
+    print("t")
+    # app.run_server(debug=True)
+    app.run_server(debug=False, use_reloader=False)
+
