@@ -12,13 +12,14 @@ import scipy
 import math
 from pandas import DataFrame as df
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['../assets/styles.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 # app.layout = html.Div(children=[
 #     html.H1(children='Hello Dash')]
 #     )
 server = app.server
+app.title='March Madness Simulator'
 # Helper function
 # TODO There is probably a more effective way of doing this in pandas 
 def get_array_from_dataframe(frame, array_type, data_type):
@@ -34,7 +35,7 @@ def prepare_ranks_graph(entry_results, special_results):
     hist_data = [most_valuable_rank, most_popular_rank, chalk_rank]
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
-        figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
+        figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                                     show_curve=True, show_hist=True, bin_size=1, 
                                     histnorm='probability')
     except:
@@ -43,9 +44,14 @@ def prepare_ranks_graph(entry_results, special_results):
             # Following code is potentially needed to prevent singular matrix error
             if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
                 most_valuable_rank[i] += most_valuable_rank[i]+.0000000001
-        figure = ff.create_distplot(hist_data, group_labels, show_rug=True, 
+        figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                             show_curve=True, show_hist=True, bin_size=1, 
                             histnorm='probability')
+    figure.update_layout(
+        title_text='Histogram of Final Placements',
+        xaxis_title='Placing',
+        yaxis_title='Share of Simulations'
+    )
     return figure
 
 # Scores graph function
@@ -60,6 +66,11 @@ def prepare_scores_graph(entry_results, special_results):
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                                 show_curve=True, bin_size=10, 
                                 histnorm='probability')
+    figure.update_layout(
+        title_text='Histogram of Final Scores',
+        xaxis_title='Score',
+        yaxis_title='Share of Simulations'
+    )
     return figure
 
 # Table preparation function
@@ -118,7 +129,8 @@ def prepare_table(entry_results, special_results, sims):
                 align=['center','center'],
                 height=30,
                 )
-    figure = go.Figure(data=[go.Table(header=columns, 
+    figure = go.Figure(data=[go.Table(name="Rankings",
+                                    header=columns, 
                                     cells=cells,
                                     columnwidth=[80,40,40,40,40,40,40,40])])
     return figure
@@ -144,7 +156,7 @@ def prepare_number_simulations_input():
     return simulations_input 
 
 def prepare_run_button_input():
-    button = html.Button(id='run-input', n_clicks=0, children='Submit')
+    button = html.Button(id='run-input', n_clicks=0, children='Rerun Analysis')
     return button
 
 # Call back to update once results change
@@ -165,9 +177,11 @@ def update_table(n_clicks, entry_input, simulations_input):
     print("update complete")
     return ranks_figure, scoring_table, winning_score_figure
 
-number_simulations = 2000
-number_entries = 100
-m = model.Model(number_simulations=number_simulations, gender="womens", scoring_sys="ESPN")
+number_simulations = 20
+number_entries = 5
+year = 2019
+gender = "womens"
+m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
 m.batch_simulate()
 print("sims done")
 m.create_json_files()
@@ -185,13 +199,28 @@ entry_results = all_results[:-4]
 # sub_results = m.analyze_sublist(number_sub_sims, number_subteams)
 
 # sub_results = random_subsample(number_entries)
-figures = []
+figures = [
+    html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
+    html.Div([
+        html.Div([
+            html.H6('Number Of Entries'),
+            prepare_number_entries_input(),
+            html.P('Maximum: '+str(number_entries)),
+        ], className="entries-box"),
+        html.Div([
+            html.H6('Number Of Simulations'),
+            prepare_number_simulations_input(),
+            html.P('Maximum: '+str(number_simulations)),
+        ], className="simulations-box"),
+        ], className="bounding-box"),
+    html.Div([
+        prepare_run_button_input(),
+    ], className="run-button"),
+    
+    ]
 figures.append(dcc.Graph(
     id='ranking-graph',
     figure=prepare_ranks_graph(entry_results, special_results)))
-figures.append(prepare_number_entries_input())
-figures.append(prepare_number_simulations_input())
-figures.append(prepare_run_button_input())
 figures.append(dcc.Graph(
     id='scoring-table',
     figure=prepare_table(entry_results, special_results, number_simulations)))
@@ -205,5 +234,5 @@ if __name__ == '__main__':
     # model.main()
     print("t")
     # app.run_server(debug=True)
-    app.run_server(debug=False, use_reloader=False)
+    app.run_server(debug=True, use_reloader=True)
 
