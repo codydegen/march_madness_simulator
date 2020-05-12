@@ -35,6 +35,9 @@
 
 /* Grid
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
+* {
+  box-sizing: border-box;
+}
 .container {
   position: relative;
   width: 100%;
@@ -436,4 +439,47 @@ there.
   flex-direction: row;
   justify-content: center;
   align-items: center;
+}
+
+.bounding-bracket {
+  display: flex;
+
+}
+
+.inner-bounding {
+  display: flex;
+  flex-direction: column;
+  width: 70px;
+  height: 400px;
+  align-items: stretch;
+}
+
+.n64 {
+  /* background-color: green; */
+}
+
+.n32 {
+  /* background-color: blue; */
+  flex-grow: 1;
+}
+
+.team {
+  flex-grow: 1;
+  font-size: 10px;
+}
+
+.game {
+  display: flex;
+  flex-grow: 1;
+  border: thin solid black;
+  border-radius: 6px;
+  flex-direction: column;
+}
+
+.bounding-r1, .bounding-r2, .bounding-r3, .bounding-r4 {
+   display: flex;
+}
+
+.bounding-r3, .bounding-r4 {
+  flex-direction: row-reverse;
 }

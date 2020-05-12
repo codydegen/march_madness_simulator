@@ -130,6 +130,7 @@ class Model:
     self.all_teams = self.create_teams()
     self.start_bracket = Bracket(model=self)
     self.sim_bracket = Bracket(model=self)
+    self.bracket_pairings = final_four_pairings[gender][year]
     self.game_pairing = 0
     self.number_simulations = number_simulations
     self.completed_simulations = 0
@@ -304,7 +305,7 @@ class Model:
     chalk_entry = {
       "team_picks" : chalk_results,
       "name" : "Chalk entry",
-      "entryID" : -1,
+      "entryID" : -4,
       "method" : "Chalk entry",
       "source" : "Chalk entry"
     }
@@ -671,7 +672,18 @@ class Model:
     print(entries, sims)
     return self.output_results(entries, sims)
 
-
+# Get entry and return it based on entry ID
+  def get_entry(self, entryID):
+    if entryID > 0:
+      for entry in self.entries['imported_entries']:
+        if entry.entryID == entryID: 
+          return entry
+    else:
+      for entry in self.special_entries:
+        if self.special_entries[entry].entryID == entryID:
+          return self.special_entries[entry]
+    raise Exception("There is no data for this entry ID.")
+    return None
 
 class Bracket:
   def __init__(self, model, method="empty", source=None):
@@ -794,6 +806,12 @@ class Bracket:
     results["method"] = "json"
     results["entryID"] = None
     results["source"] = None
+    # Hooking up entry IDs to special brackets to make them easier to find 
+    # later for Dash postprocessing
+    if name == 'most valuable bracket':
+      results['entryID'] = -2
+    elif name == 'most popular bracket':
+      results['entryID'] = -3
     a = json.dumps(results)
     return a
 

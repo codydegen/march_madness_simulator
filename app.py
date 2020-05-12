@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import math
+import dash_table as dt
 from pandas import DataFrame as df
 
 external_stylesheets = ['../assets/styles.css']
@@ -129,10 +130,20 @@ def prepare_table(entry_results, special_results, sims):
                 align=['center','center'],
                 height=30,
                 )
-    figure = go.Figure(data=[go.Table(name="Rankings",
-                                    header=columns, 
-                                    cells=cells,
-                                    columnwidth=[80,40,40,40,40,40,40,40])])
+    # figure = go.Figure(data=[go.Table(name="Rankings",
+    #                                 header=columns, 
+    #                                 cells=cells,
+    #                                 columnwidth=[80,40,40,40,40,40,40,40
+    # ])])
+    a = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar.csv')
+    figure = dt.DataTable(
+        id="scoring-table",
+        columns=[{"name": i, "id": i} for i in a.columns],
+        data=a.to_dict('records'),
+        editable=True,
+        active_cell={"row": 0, "column": 0},
+        selected_cells=[{"row": 0, "column": 0}],
+        )
     return figure
 
 def prepare_number_entries_input():
@@ -162,7 +173,7 @@ def prepare_run_button_input():
 # Call back to update once results change
 @app.callback(
     [Output(component_id='ranking-graph', component_property='figure'),
-     Output(component_id='scoring-table', component_property='figure'),
+    #  Output(component_id='scoring-table', component_property='figure'),
      Output(component_id='winning-score-graph', component_property='figure')],
     [Input(component_id='run-input', component_property='n_clicks')],
     [State('number-entries-input', 'value'),
@@ -175,7 +186,93 @@ def update_table(n_clicks, entry_input, simulations_input):
     scoring_table = prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
     winning_score_figure = prepare_scores_graph(filtered_entry_results, filtered_special_results)
     print("update complete")
-    return ranks_figure, scoring_table, winning_score_figure
+    return ranks_figure, winning_score_figure
+    # return ranks_figure, scoring_table, winning_score_figure
+
+# Create the outline of the bracket used for visualizations
+def create_bracket():
+
+    # Create each individual region
+    def create_region(region):
+        stage_html_list=[]
+        for stage in stages:
+            game_html_list = []
+            for i in range(stages[stage]):
+                game_html_list.append(html.Div([
+                    html.Div(region+' '+stage+' g'+str(i)+' 1', id=region+'-'+stage+'-g'+str(i)+'-team1', className='team team1'),
+                    html.Div(region+' '+stage+' g'+str(i)+' 2', id=region+'-'+stage+'-g'+str(i)+'-team2', className='team team2'),
+                ], className=region+' '+stage+' g'+str(i)+' game'))
+            stage_html_list.append(
+                html.Div(game_html_list, className='inner-bounding '+stage))
+        return html.Div(stage_html_list, className='bounding-'+region)
+
+# Dictionary of each of the stages associated with the given region and the 
+# number of games per region for that stage
+    stages = {
+        'n64' : 8, 
+        'n32' : 4,
+        'n16' : 2,
+        'n8' : 1
+    }
+
+    bounding_html_list = []
+    left_region_html_list = []
+    left_region_html_list.append(create_region('r1'))
+    left_region_html_list.append(create_region('r2'))
+    right_region_html_list = []
+    right_region_html_list.append(create_region('r3'))
+    right_region_html_list.append(create_region('r4'))
+    bounding_html_list.append(
+        html.Div(left_region_html_list, className='left-bounding')
+    )
+    bounding_html_list.append(
+        html.Div([html.Div([
+            html.Div('ff g1 1', id='n4-g0-team1', className='team team1'),
+            html.Div('ff g1 2', id='n4-g0-team2', className='team team2'),
+        ], className='n4 g1')], className='final-four-bounding game')
+    )
+    bounding_html_list.append(
+        html.Div([html.Div([
+            html.Div('f g1 1', id='n2-g0-team1', className='team team1'),
+            html.Div('f g1 2', id='n2-g0-team2', className='team team2'),
+        ], className='n2 g1')], className='finals-bounding game')
+    )
+    bounding_html_list.append(
+        html.Div([html.Div([
+            html.Div('ff g2 1', id='n4-g1-team1', className='team team1'),
+            html.Div('ff g2 2', id='n4-g1-team2', className='team team2'),
+        ], className='n4 g2')], className='final-four-bounding game')
+    )
+    bounding_html_list.append(
+        html.Div(right_region_html_list, className='right-bounding')
+    )
+    bracket_html = html.Div(bounding_html_list, className='bounding-bracket')
+    return bracket_html
+
+@app.callback(
+    [Output(component_id='n2-g0-team1', component_property='children')], 
+    [Input(component_id='scoring-table', component_property='active_cell')],
+    # [State("scoring-table", "data")]
+)
+def fill_bracket_visualization(entryID):
+    output = str(entryID),
+    return output
+    # [html.Div(str(entryID), id='n2-g0-team2', className='team team2')]
+    entry = m.get_entry(-2)
+    i=0
+    for semi_final_pairings in m.bracket_pairings:
+
+        for region in semi_final_pairings:
+            picks = entry.team_picks[region]
+            output=str(picks['1'])
+            return [output,]
+            pass
+    # Go through each region
+    # Fill each region and based on the number of wins
+    # Team with six wins wins their final four matchup
+    # Team with seven wins wins the entire thing
+    pass
+
 
 number_simulations = 20
 number_entries = 5
@@ -196,10 +293,12 @@ all_results = m.output_results()
 special_wins = m.get_special_wins()
 special_results = all_results[-4:]
 entry_results = all_results[:-4]
+# fill_bracket_visualization(-2)
 # sub_results = m.analyze_sublist(number_sub_sims, number_subteams)
 
 # sub_results = random_subsample(number_entries)
 figures = [
+    create_bracket(), 
     html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
     html.Div([
         html.Div([
@@ -216,14 +315,11 @@ figures = [
     html.Div([
         prepare_run_button_input(),
     ], className="run-button"),
-    
-    ]
+]
 figures.append(dcc.Graph(
     id='ranking-graph',
     figure=prepare_ranks_graph(entry_results, special_results)))
-figures.append(dcc.Graph(
-    id='scoring-table',
-    figure=prepare_table(entry_results, special_results, number_simulations)))
+figures.append(prepare_table(entry_results, special_results, number_simulations))
 figures.append(dcc.Graph(
     id='winning-score-graph',
     figure=prepare_scores_graph(entry_results, special_results)))
