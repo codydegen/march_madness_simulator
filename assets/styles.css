@@ -446,12 +446,20 @@ there.
 
 }
 
+:root {
+  --bracket-height: 500px;
+}
+
 .inner-bounding {
   display: flex;
   flex-direction: column;
-  width: 70px;
-  height: 400px;
+  width: 100px;
+  height: calc(var(--bracket-height)/2);
   align-items: stretch;
+}
+
+.final-four-bounding, .finals-bounding {
+  height: var(--bracket-height);
 }
 
 .n64 {
@@ -465,7 +473,7 @@ there.
 
 .team {
   flex-grow: 1;
-  font-size: 10px;
+  font-size: 8px;
 }
 
 .game {

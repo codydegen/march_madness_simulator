@@ -22,7 +22,7 @@ final_four_pairings = {
   "mens" : {
     2019 : 
       [['East', 'West'], 
-      ['Midwest', 'South']]
+      ['South', 'Midwest']]
     ,
     2018 : {
       # TBD
