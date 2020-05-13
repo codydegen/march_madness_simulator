@@ -1,10 +1,27 @@
 # march_madness
 
 ## Intro
-Something that has always interested me is how optimal decision-making for building a March madness bracket depends so heavily on pool size. The strategy to win something like ESPN's super contest that regularly features over a million entries is a lot different from just trying to win your small work pool of 20 people. With this project I was hoping to identify some strategies for those of us trying to get really good at beating a few friends rather than trying to win a pool of millions of people.  Obviously this would've been more relevant if we had a tournament with which to test these strategies, but sometimes a global pandemic gets in the way of your little side project. What can you do.
+This is a program to simulate March Madness so high-value teams can be identified for the purposes of creating the optimal bracket.  Visualizations of the results for brackets for the March Madness Simulations are shown. Depending on the size of the pool entered, you can hopefully make some informed decisions on whether to go for a high-variance strategy (i.e., pick an out-of-left-field winner, make some savvy underdog picks) or just play it safe (pick a high seed to win, generally err on the side of less chaos).
 
-## Approach
+Current build can be found [here](https://cd-march-madness.herokuapp.com/).
 
+## Technologies
+* Written in [Python](https://www.python.org/)
+* [Sqlite](https://www.sqlite.org/index.html) for database storage
+* [selenium](https://www.selenium.dev/), [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) for web scraping
+* [pandas](https://pandas.pydata.org/) for data analysis
+* [Dash](https://plotly.com/dash/), [plotly](https://plotly.com/) for data visualization
+* [Heroku](https://www.heroku.com/) for hosting
+
+## Getting started
+* Find the deployed website at http://cd-march-madness.herokuapp.com/
+* Or run locally by
+  * install python3
+  * pip install -r requirements.txt --user
+  * python -m app
+  * See further documentation on workflow [here](/workflow.md) 
+
+## Methodology
 To start, I feel like there are three key things that you need to know in order to fill out a good bracket.
 
 * Knowing who the best teams are
@@ -20,29 +37,14 @@ The purpose here is to leverage what we know about other people to pick some tea
   * there's an 8-9 or 7-10 matchup that analytics say is going to be a coin toss, but the public is heavily favoring one side of it.  Picking the other side of that matchup is an easy way to carve out a small advantage.
   * You're in a pool with a lot of people who are fans of a specific team in the tournament. No matter how good or bad that team is, people are to be picking them to go much further than they should be.  You can exploit that by picking a relatively early exit for that team.
 
-## Methodology
-
-## Technologies
-* Python
-* selenium, BeautifulSoup
-* Sqlite
-* pandas
-* Dash, plotly
-* Heroku
-
-## Getting started
-* Find the deployed website at http://cd-march-madness.herokuapp.com/
-* Or run locally by
-  * install python3
-  * pip install -r requirements.txt --user
-  * python -m app
-  * See further documentation on workflow here 
-
 ## To-Do
-* Better visualization of results
-* knowing who the best teams are
-  * enhance model to update elo after early round wins (Low priority)
-* knowing who other people are picking
-  * compare expected points versus who picked percentage
-  * estimate homer factor (Low priority)
-* implement unit testing ( should be high-priority but this project is going on for so long that it'll probably end up not happening )
+* Add other entries to table
+* Improve bracket output
+* add selected bracket to other histograms
+* Long-term:
+  * knowing who the best teams are
+    * enhance model to update elo after early round wins (Low priority)
+  * knowing who other people are picking
+    * compare expected points versus who picked percentage
+    * estimate homer factor (Low priority)
+  * implement unit testing ( should be high-priority but this project is going on for so long that it'll probably end up not happening )
