@@ -16,9 +16,6 @@ from pandas import DataFrame as df
 external_stylesheets = ['../assets/styles.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# app.layout = html.Div(children=[
-#     html.H1(children='Hello Dash')]
-#     )
 server = app.server
 app.title='March Madness Simulator'
 # Helper function
@@ -81,68 +78,58 @@ def prepare_scores_graph(entry_results, special_results):
 # Table preparation function
 def prepare_table(entry_results, special_results, sims):
 
-    def get_placings(place, inclusive=False, percentile=False, average=False):
+    def get_sub_placings(data_set, place, inclusive=False, percentile=False, average=False):
+        i=0
+        if average:
+            return round(np.average(data_set),1)
+        if percentile:
+            place = math.ceil(place/100*(len(entry_results)))
+        
+        for score in data_set:
+            if score>place:
+                break
+            if percentile and score<=place:
+                i+=1
+            elif inclusive and score<=place:
+                i+=1
+            elif score==place:
+                i+=1
+        return round(i/sims*100, 3)
 
-        def get_sub_placings(data_set, place, inclusive, percentile, average):
-            i=0
-            if average:
-                return round(np.average(data_set),1)
-            if percentile:
-                place = math.ceil(place/100*(len(entry_results)))
-            
-            for score in data_set:
-                if score>place:
-                    break
-                if percentile and score<=place:
-                    i+=1
-                elif inclusive and score<=place:
-                    i+=1
-                elif score==place:
-                    i+=1
-            return str(round(i/sims*100, 1))+"%"
-            
-        score_array = []
-        score_array.append(get_sub_placings(most_valuable_rank, place, inclusive, percentile, average))
-        score_array.append(get_sub_placings(most_popular_rank, place, inclusive, percentile, average))
-        score_array.append(get_sub_placings(chalk_rank, place, inclusive, percentile, average))
-        return score_array
-
+    def convert_entry_to_dictionary(dataframe, name):
+        ranks = get_array_from_dataframe(dataframe, 'placings', name)
+        ranks.sort()
+        index = dataframe[dataframe['name'] == name]['entryID'].values[0]
+        entry = {
+            'Index': index,
+            'Entry': name,
+            'First Places': get_sub_placings(ranks, 1),
+            'Second Places': get_sub_placings(ranks, 2),
+            'Third Places': get_sub_placings(ranks, 3),
+            'Top Five': get_sub_placings(ranks, 5, inclusive=True),
+            'Top Ten': get_sub_placings(ranks, 10, inclusive=True),
+            'Top 5%': get_sub_placings(ranks, 5, percentile=True),
+            'Average Placing': get_sub_placings(ranks, 0, average=True),
+        }
+        return entry
     # Get rankings and then sort them
-    # TODO this could eventually be modularized using a dictionary to allow 
-    # additional entries to be added to the table
-    most_valuable_rank = get_array_from_dataframe(special_results, 'placings', 'most_valuable_teams')
-    most_valuable_rank.sort()
-    most_popular_rank = get_array_from_dataframe(special_results, 'placings', 'most_popular_teams')
-    most_popular_rank.sort()
-    chalk_rank = get_array_from_dataframe(special_results, 'placings', 'chalk')
-    chalk_rank.sort()
 
-    bracket_entries = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
-    bracket_ids = [-2, -3, -4]
-    # Get placings for various positions
-    first_places = get_placings(1)
-    second_places = get_placings(2)
-    third_places = get_placings(3)
-    top_fives = get_placings(5,inclusive=True)
-    top_tens = get_placings(10,inclusive=True)
-    top_five_percentile = get_placings(5, percentile=True)
-    average = get_placings(0, average=True)
+    # most_valuable_rank = get_array_from_dataframe(special_results, 'placings', 'most_valuable_teams')
+    # most_valuable_rank.sort()
+    # most_popular_rank = get_array_from_dataframe(special_results, 'placings', 'most_popular_teams')
+    # most_popular_rank.sort()
+    # chalk_rank = get_array_from_dataframe(special_results, 'placings', 'chalk')
+    # chalk_rank.sort()
 
-    # to do Now the only dictionary is passed in There's probably no need to create a data frame first
-    data_dictionary = {
-        'Index': bracket_ids,
-        'Entry': bracket_entries,
-        'First Places': first_places,
-        'Second Places': second_places,
-        'Third Places': third_places,
-        'Top Five': top_fives,
-        'Top Ten': top_tens,
-        'Top 5%': top_five_percentile,
-        'Average Placing': average,
-    }
-    b = df(data_dictionary, index=bracket_ids)
-    data=b.to_dict('records')
-    return data
+    data_array = []
+    data_array.append(convert_entry_to_dictionary(special_results, 'most_valuable_teams'))
+    data_array.append(convert_entry_to_dictionary(special_results, 'most_popular_teams'))
+    data_array.append(convert_entry_to_dictionary(special_results, 'chalk'))
+    for entry in entry_results['name']:
+        data_array.append(convert_entry_to_dictionary(entry_results, entry))
+
+    print("updating table viz")
+    return data_array
 
 def prepare_number_entries_input():
     entries_input = dcc.Input(
@@ -172,6 +159,7 @@ def prepare_run_button_input():
 @app.callback(
     [Output(component_id='ranking-graph', component_property='figure'),
      Output(component_id='scoring-table', component_property='data'),
+     Output(component_id='scoring-table', component_property='selected_rows'),
      Output(component_id='winning-score-graph', component_property='figure')],
     [Input(component_id='run-input', component_property='n_clicks')],
     [State('number-entries-input', 'value'),
@@ -184,7 +172,7 @@ def update_table(n_clicks, entry_input, simulations_input):
     scoring_table = prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
     winning_score_figure = prepare_scores_graph(filtered_entry_results, filtered_special_results)
     print("update complete")
-    return ranks_figure, scoring_table, winning_score_figure
+    return ranks_figure, scoring_table, [0], winning_score_figure
 
 # Create each individual region
 def create_region(region, stages):
@@ -253,7 +241,7 @@ def create_bracket():
 number_simulations = 1000
 number_entries = 100
 year = 2019
-gender = "womens"
+gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
 m.batch_simulate()
 print("sims done")
@@ -278,7 +266,8 @@ figures = [
         data=prepare_table(entry_results, special_results, number_entries),
         editable=True,
         row_selectable='single',
-        selected_row_ids=[-2],
+        selected_rows=[0],
+        sort_action='native',
         ),
     create_bracket(), 
     html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
@@ -430,7 +419,6 @@ def fill_bracket_visualization(data, entryID):
         for region in semi_final_pairings:
             picks = entry.team_picks[region]
             for i in team_ordering:
-                # To do, check how this works with multiple Teams at one seed for men's brackets
                 for team in picks[str(i)]:
                     if picks[str(i)][team] > 0:
                         team_name = str(i)+' '+team
@@ -453,5 +441,5 @@ if __name__ == '__main__':
     # model.main()
     print("t")
     # app.run_server(debug=True)
-    app.run_server(debug=True, use_reloader=True)
+    app.run_server(debug=False, use_reloader=True)
 
