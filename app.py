@@ -177,15 +177,16 @@ def update_table(n_clicks, entry_input, simulations_input):
     return ranks_figure, scoring_table, [0], winning_score_figure
 
 # Create each individual region
-def create_region(region, stages):
+def create_region(region, stages, initial_game_number):
     stage_html_list=[]
     for stage in stages:
         game_html_list = []
         for i in range(stages[stage]):
             game_html_list.append(html.Div([
-                html.Div(region+' '+stage+' g'+str(i)+' 1', id=region+'-'+stage+'-g'+str(i)+'-team1', className='team team1'),
-                html.Div(region+' '+stage+' g'+str(i)+' 2', id=region+'-'+stage+'-g'+str(i)+'-team2', className='team team2'),
-            ], className=region+' '+stage+' g'+str(i)+' game'))
+                html.Div('game'+str(initial_game_number)+' 1', id='game'+str(initial_game_number)+'-team1', className='team team1'),
+                html.Div('game'+str(initial_game_number)+' 2', id='game'+str(initial_game_number)+'-team2', className='team team2'),
+            ], id='game'+str(initial_game_number), className=region+' '+stage+' g'+str(i)+' game'))
+            initial_game_number+=1
         stage_html_list.append(
             html.Div(game_html_list, className='inner-bounding '+stage))
     return html.Div(stage_html_list, className='bounding-'+region)
@@ -204,31 +205,31 @@ def create_bracket():
 
     bounding_html_list = []
     left_region_html_list = []
-    left_region_html_list.append(create_region('r1', stages))
-    left_region_html_list.append(create_region('r2', stages))
+    left_region_html_list.append(create_region('r1', stages, 0))
+    left_region_html_list.append(create_region('r2', stages, 15))
     right_region_html_list = []
-    right_region_html_list.append(create_region('r3', stages))
-    right_region_html_list.append(create_region('r4', stages))
+    right_region_html_list.append(create_region('r3', stages, 30))
+    right_region_html_list.append(create_region('r4', stages, 45))
     bounding_html_list.append(
         html.Div(left_region_html_list, className='left-bounding')
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('ff g1 1', id='n4-g0-team1', className='team team1'),
-            html.Div('ff g1 2', id='n4-g0-team2', className='team team2'),
-        ], className='n4 g1')], className='final-four-bounding inner-bounding game')
+            html.Div('ff g1 1', id='game60-team1', className='team team1'),
+            html.Div('ff g1 2', id='game60-team2', className='team team2'),
+        ], className='n4 g1')], id='game60', className='final-four-bounding inner-bounding game')
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('f g1 1', id='n2-g0-team1', className='team team1'),
-            html.Div('f g1 2', id='n2-g0-team2', className='team team2'),
-        ], className='n2 g1')], className='finals-bounding inner-bounding game')
+            html.Div('f g1 1', id='game62-team1', className='team team1'),
+            html.Div('f g1 2', id='game62-team2', className='team team2'),
+        ], className='n2 g1')], id='game62', className='finals-bounding inner-bounding game')
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('ff g2 1', id='n4-g1-team1', className='team team1'),
-            html.Div('ff g2 2', id='n4-g1-team2', className='team team2'),
-        ], className='n4 g2')], className='final-four-bounding inner-bounding game')
+            html.Div('ff g2 1', id='game61-team1', className='team team1'),
+            html.Div('ff g2 2', id='game61-team2', className='team team2'),
+        ], className='n4 g2')], id='game61', className='final-four-bounding inner-bounding game')
     )
     bounding_html_list.append(
         html.Div(right_region_html_list, className='right-bounding')
@@ -322,26 +323,22 @@ def create_output_list_for_bracket_callback():
     region_number=1
 
     def populate_sublist_region(output_list, regions, region_number):
-        for region in regions:
-            for stage in stages:
-                for i in range(stages[stage]):
-                    output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team1', component_property='children'))
+        for i in range(63):
+            output_list.append(Output(component_id='game'+str(i), component_property='children'))
                     # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team1', component_property='className'))
-                    output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team2', component_property='children'))
+                    # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team2', component_property='children'))
                     # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team2', component_property='className'))
             region_number+=1
 
     def populate_sublist_final_four(output_list):
         game_ids = ['n4-g0', 'n2-g0', 'n4-g1']
         for game_id in game_ids:
-            output_list.append(Output(component_id=game_id+'-team1', component_property='children'))
+            output_list.append(Output(component_id=game_id+'-game', component_property='children'))
             # output_list.append(Output(component_id=game_id+'-team1', component_property='className'))
-            output_list.append(Output(component_id=game_id+'-team2', component_property='children'))
+            # output_list.append(Output(component_id=game_id+'-team2', component_property='children'))
             # output_list.append(Output(component_id=game_id+'-team2', component_property='className'))
 
     populate_sublist_region(output_list, left_regions, 1)
-    populate_sublist_final_four(output_list)
-    populate_sublist_region(output_list, right_regions, 3)
     return output_list
 output_list = create_output_list_for_bracket_callback()
 
@@ -353,7 +350,11 @@ output_list = create_output_list_for_bracket_callback()
 )
 def fill_bracket_visualization(data, entryID):
     if entryID == None:
-        return [str(i) for i in range(126)]
+        print(' no entry ID provided')
+        output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1'),
+                   html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
+    ] for i in range(63)]
+        return output
     team_paths_index = 0
     team_ordering = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
     team_paths = [
@@ -422,26 +423,94 @@ def fill_bracket_visualization(data, entryID):
         [110, 119, 123, 125, 65, 63],
         [111, 119, 123, 125, 65, 63],
     ]
-    output = [i for i in range(126)]
+    new_team_paths = [
+         [[0, 0], [8, 0],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[0, 1], [8, 0],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[1, 0], [8, 1],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[1, 1], [8, 1],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[2, 0], [9, 0],  [12, 1], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[2, 1], [9, 0],  [12, 1], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[3, 0], [9, 1],  [12, 1], [14, 0], [60, 0], [62, 0], [62, 0]],
+         [[3, 1], [9, 1],  [12, 1], [14, 0], [60, 0], [62, 0], [62, 0]],
+        [[4, 0],  [10, 0], [13, 0], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[4, 1],  [10, 0], [13, 0], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[5, 0],  [10, 1], [13, 0], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[5, 1],  [10, 1], [13, 0], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[6, 0],  [11, 0], [13, 1], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[6, 1],  [11, 0], [13, 1], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[7, 0],  [11, 1], [13, 1], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[7, 1],  [11, 1], [13, 1], [14, 1], [60, 0], [62, 0], [62, 0]],
+        [[15, 0], [23, 0], [27, 0], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[15, 1], [23, 0], [27, 0], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[16, 0], [23, 1], [27, 0], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[16, 1], [23, 1], [27, 0], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[17, 0], [24, 0], [27, 1], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[17, 1], [24, 0], [27, 1], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[18, 0], [24, 1], [27, 1], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[18, 1], [24, 1], [27, 1], [29, 0], [60, 1], [62, 0], [62, 0]],
+        [[19, 0], [25, 0], [28, 0], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[19, 1], [25, 0], [28, 0], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[20, 0], [25, 1], [28, 0], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[20, 1], [25, 1], [28, 0], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[21, 0], [26, 0], [28, 1], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[21, 1], [26, 0], [28, 1], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[22, 0], [26, 1], [28, 1], [29, 1], [60, 1], [62, 0], [62, 0]],
+        [[22, 1], [26, 1], [28, 1], [29, 1], [60, 1], [62, 0], [62, 0]],        
+        [[30, 0], [38, 0], [42, 0], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[30, 1], [38, 0], [42, 0], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[31, 0], [38, 1], [42, 0], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[31, 1], [38, 1], [42, 0], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[32, 0], [39, 0], [42, 1], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[32, 1], [39, 0], [42, 1], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[33, 0], [39, 1], [42, 1], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[33, 1], [39, 1], [42, 1], [44, 0], [61, 0], [62, 1], [62, 1]],
+        [[34, 0], [40, 0], [43, 0], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[34, 1], [40, 0], [43, 0], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[35, 0], [40, 1], [43, 0], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[35, 1], [40, 1], [43, 0], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[36, 0], [41, 0], [43, 1], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[36, 1], [41, 0], [43, 1], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[37, 0], [41, 1], [43, 1], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[37, 1], [41, 1], [43, 1], [44, 1], [61, 0], [62, 1], [62, 1]],
+        [[45, 0], [53, 0], [57, 0], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[45, 1], [53, 0], [57, 0], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[46, 0], [53, 1], [57, 0], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[46, 1], [53, 1], [57, 0], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[47, 0], [54, 0], [57, 1], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[47, 1], [54, 0], [57, 1], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[48, 0], [54, 1], [57, 1], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[48, 1], [54, 1], [57, 1], [59, 0], [61, 1], [62, 1], [62, 1]],
+        [[49, 0], [55, 0], [58, 0], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[49, 1], [55, 0], [58, 0], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[50, 0], [55, 1], [58, 0], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[50, 1], [55, 1], [58, 0], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[51, 0], [56, 0], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[51, 1], [56, 0], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[52, 0], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]],
+        [[52, 1], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]], 
+    ]
+    output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1'),
+               html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
+    ] for i in range(63)]
+    output = [[i, i] for i in range(63)]
     # output = str(entryID),
+    i=0
     entry = m.get_entry(data[entryID[0]]['Index'])
     for semi_final_pairings in m.bracket_pairings:
         for region in semi_final_pairings:
             picks = entry.team_picks[region]
-            for i in team_ordering:
-                for team in picks[str(i)]:
-                    if picks[str(i)][team] > 0:
-                        team_name = str(i)+' '+team
-                        wins = picks[str(i)][team]
-                        output[team_paths[team_paths_index][0]] = team_name
-                        for j in range(1, wins):
-                            if j < 6:
-                                game_number = team_paths[team_paths_index][j]
-                                output[game_number] = team_name
-                            won_game_number = team_paths[team_paths_index][j-1]
-                            output[won_game_number] = team_name+' w'
+            for team_seed in team_ordering:
+                for team in picks[str(team_seed)]:
+                    if picks[str(team_seed)][team] > 0:
+                        team_name = str(team_seed)+' '+team
+                        wins = picks[str(team_seed)][team]
+                        output[new_team_paths[i][wins-1][0]][new_team_paths[i][wins-1][1]] = html.Div(
+                            team_name, id='game'+str(i)+'-team'+str(new_team_paths[i][wins-1][1]+1), className='team rnd'+str(wins))
+                        for j in range(wins-2, -1, -1):
+                            output[new_team_paths[i][j][0]][new_team_paths[i][j][1]] = html.Div(
+                            team_name, id='game'+str(i)+'-team'+str(new_team_paths[i][j][1]+1), className='team-win team rnd'+str(j+1))
                             
-                team_paths_index+=1
+                        i+=1
             # output=str(picks['1'])
     return output
 
