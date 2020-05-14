@@ -102,15 +102,24 @@ def prepare_table(entry_results, special_results, sims):
         ranks = get_array_from_dataframe(dataframe, 'placings', name)
         ranks.sort()
         index = dataframe[dataframe['name'] == name]['entryID'].values[0]
+        percentiles = [get_sub_placings(ranks, 20, percentile=True), 
+                       get_sub_placings(ranks, 40, percentile=True), 
+                       get_sub_placings(ranks, 60, percentile=True), 
+                       get_sub_placings(ranks, 80, percentile=True), 
+                       1]
         entry = {
             'Index': index,
             'Entry': name,
             'First Places': get_sub_placings(ranks, 1),
             'Second Places': get_sub_placings(ranks, 2),
             'Third Places': get_sub_placings(ranks, 3),
-            'Top Five': get_sub_placings(ranks, 5, inclusive=True),
-            'Top Ten': get_sub_placings(ranks, 10, inclusive=True),
-            'Top 5%': get_sub_placings(ranks, 5, percentile=True),
+            # 'Top Five': get_sub_placings(ranks, 5, inclusive=True),
+            # 'Top Ten': get_sub_placings(ranks, 10, inclusive=True),
+            'First Quintile': percentiles[0],
+            'Second Quintile': percentiles[1]-percentiles[0],
+            'Third Quintile': percentiles[2]-percentiles[1],
+            'Fourth Quintile': percentiles[3]-percentiles[2],
+            'Fifth Quintile': percentiles[4]-percentiles[3],
             'Average Placing': get_sub_placings(ranks, 0, average=True),
         }
         return entry
@@ -261,7 +270,7 @@ special_wins = m.get_special_wins()
 special_results = all_results[-4:]
 entry_results = all_results[:-4]
 table_columns_pre=['Entry']
-table_columns=['First Places', 'Second Places', 'Third Places', 'Top Five', 'Top Ten', 'Top 5%']
+table_columns=['First Places', 'Second Places', 'Third Places', 'First Quintile', 'Second Quintile', 'Third Quintile', 'Fourth Quintile', 'Fifth Quintile']
 table_columns_post=['Average Placing']
 
 
@@ -325,18 +334,12 @@ def create_output_list_for_bracket_callback():
     def populate_sublist_region(output_list, regions, region_number):
         for i in range(63):
             output_list.append(Output(component_id='game'+str(i), component_property='children'))
-                    # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team1', component_property='className'))
-                    # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team2', component_property='children'))
-                    # output_list.append(Output(component_id='r'+str(region_number)+'-'+stage+'-g'+str(i)+'-'+'team2', component_property='className'))
             region_number+=1
 
     def populate_sublist_final_four(output_list):
         game_ids = ['n4-g0', 'n2-g0', 'n4-g1']
         for game_id in game_ids:
             output_list.append(Output(component_id=game_id+'-game', component_property='children'))
-            # output_list.append(Output(component_id=game_id+'-team1', component_property='className'))
-            # output_list.append(Output(component_id=game_id+'-team2', component_property='children'))
-            # output_list.append(Output(component_id=game_id+'-team2', component_property='className'))
 
     populate_sublist_region(output_list, left_regions, 1)
     return output_list
@@ -355,74 +358,7 @@ def fill_bracket_visualization(data, entryID):
                    html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
     ] for i in range(63)]
         return output
-    team_paths_index = 0
     team_ordering = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
-    team_paths = [
-        [0, 16, 24, 28, 60, 62],
-        [1, 16, 24, 28, 60, 62],
-        [2, 17, 24, 28, 60, 62],
-        [3, 17, 24, 28, 60, 62],
-        [4, 18, 25, 28, 60, 62],
-        [5, 18, 25, 28, 60, 62],
-        [6, 19, 25, 28, 60, 62],
-        [7, 19, 25, 28, 60, 62],
-        [8, 20, 26, 29, 60, 62],
-        [9, 20, 26, 29, 60, 62],
-        [10, 21, 26, 29, 60, 62],
-        [11, 21, 26, 29, 60, 62],
-        [12, 22, 27, 29, 60, 62],
-        [13, 22, 27, 29, 60, 62],
-        [14, 23, 27, 29, 60, 62],
-        [15, 23, 27, 29, 60, 62],
-        [30, 46, 54, 58, 61, 62],
-        [31, 46, 54, 58, 61, 62],
-        [32, 47, 54, 58, 61, 62],
-        [33, 47, 54, 58, 61, 62],
-        [34, 48, 55, 58, 61, 62],
-        [35, 48, 55, 58, 61, 62],
-        [36, 49, 55, 58, 61, 62],
-        [37, 49, 55, 58, 61, 62],
-        [38, 50, 56, 59, 61, 62],
-        [39, 50, 56, 59, 61, 62],
-        [40, 51, 56, 59, 61, 62],
-        [41, 51, 56, 59, 61, 62],
-        [42, 52, 57, 59, 61, 62],
-        [43, 52, 57, 59, 61, 62],
-        [44, 53, 57, 59, 61, 62],
-        [45, 53, 57, 59, 61, 62],
-        [66, 82, 90, 94, 64, 63],
-        [67, 82, 90, 94, 64, 63],
-        [68, 83, 90, 94, 64, 63],
-        [69, 83, 90, 94, 64, 63],
-        [70, 84, 91, 94, 64, 63],
-        [71, 84, 91, 94, 64, 63],
-        [72, 85, 91, 94, 64, 63],
-        [73, 85, 91, 94, 64, 63],
-        [74, 86, 92, 95, 64, 63],
-        [75, 86, 92, 95, 64, 63],
-        [76, 87, 92, 95, 64, 63],
-        [77, 87, 92, 95, 64, 63],
-        [78, 88, 93, 95, 64, 63],
-        [79, 88, 93, 95, 64, 63],
-        [80, 89, 93, 95, 64, 63],
-        [81, 89, 93, 95, 64, 63],
-        [96, 112, 120, 124, 65, 63],
-        [97, 112, 120, 124, 65, 63],
-        [98, 113, 120, 124, 65, 63],
-        [99, 113, 120, 124, 65, 63],
-        [100, 114, 121, 124, 65, 63],
-        [101, 114, 121, 124, 65, 63],
-        [102, 115, 121, 124, 65, 63],
-        [103, 115, 121, 124, 65, 63],
-        [104, 116, 122, 125, 65, 63],
-        [105, 116, 122, 125, 65, 63],
-        [106, 117, 122, 125, 65, 63],
-        [107, 117, 122, 125, 65, 63],
-        [108, 118, 123, 125, 65, 63],
-        [109, 118, 123, 125, 65, 63],
-        [110, 119, 123, 125, 65, 63],
-        [111, 119, 123, 125, 65, 63],
-    ]
     new_team_paths = [
          [[0, 0], [8, 0],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
          [[0, 1], [8, 0],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
@@ -493,7 +429,6 @@ def fill_bracket_visualization(data, entryID):
                html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
     ] for i in range(63)]
     output = [[i, i] for i in range(63)]
-    # output = str(entryID),
     i=0
     entry = m.get_entry(data[entryID[0]]['Index'])
     for semi_final_pairings in m.bracket_pairings:
@@ -509,16 +444,12 @@ def fill_bracket_visualization(data, entryID):
                         for j in range(wins-2, -1, -1):
                             output[new_team_paths[i][j][0]][new_team_paths[i][j][1]] = html.Div(
                             team_name, id='game'+str(i)+'-team'+str(new_team_paths[i][j][1]+1), className='team-win team rnd'+str(j+1))
-                            
                         i+=1
-            # output=str(picks['1'])
     return output
 
 
 
 if __name__ == '__main__':
-    # model.main()
-    print("t")
     # app.run_server(debug=True)
     app.run_server(debug=True, use_reloader=True)
 

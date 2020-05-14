@@ -443,7 +443,8 @@ there.
 
 .bounding-bracket {
   display: flex;
-
+  width: 1100px;
+  margin: 20px auto;
 }
 
 :root {
@@ -460,6 +461,7 @@ there.
 
 .final-four-bounding, .finals-bounding {
   height: var(--bracket-height);
+  width: 120px;
 }
 
 
