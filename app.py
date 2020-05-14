@@ -11,6 +11,8 @@ import pandas as pd
 import scipy
 import math
 import dash_table as dt
+import dash_table.FormatTemplate as FormatTemplate
+from dash_table.Format import Sign
 from pandas import DataFrame as df
 
 external_stylesheets = ['../assets/styles.css']
@@ -94,7 +96,7 @@ def prepare_table(entry_results, special_results, sims):
                 i+=1
             elif score==place:
                 i+=1
-        return round(i/sims*100, 3)
+        return round(i/sims, 3)
 
     def convert_entry_to_dictionary(dataframe, name):
         ranks = get_array_from_dataframe(dataframe, 'placings', name)
@@ -238,8 +240,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 1000
-number_entries = 100
+number_simulations = 50
+number_entries = 10
 year = 2019
 gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -257,18 +259,26 @@ all_results = m.output_results()
 special_wins = m.get_special_wins()
 special_results = all_results[-4:]
 entry_results = all_results[:-4]
-table_columns=['Entry', 'First Places', 'Second Places', 'Third Places', 'Top Five', 'Top Ten', 'Top 5%', 'Average Placing']
+table_columns_pre=['Entry']
+table_columns=['First Places', 'Second Places', 'Third Places', 'Top Five', 'Top Ten', 'Top 5%']
+table_columns_post=['Average Placing']
+
+
 # sub_results = random_subsample(number_entries)
 figures = [
     dt.DataTable(
         id="scoring-table",
-        columns=[{"name": i, "id": i} for i in table_columns],
+        columns=[{"name": i, "id": i} for i in table_columns_pre]+ 
+                [{"name": i, "id": i, "type": "numeric", "format": FormatTemplate.percentage(1)} for i in table_columns] + 
+                [{"name": i, "id": i} for i in table_columns_post],
         data=prepare_table(entry_results, special_results, number_entries),
         editable=True,
         row_selectable='single',
         selected_rows=[0],
         sort_action='native',
+        style_cell={'textAlign': 'left'},
         ),
+
     create_bracket(), 
     html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
     html.Div([
@@ -441,5 +451,5 @@ if __name__ == '__main__':
     # model.main()
     print("t")
     # app.run_server(debug=True)
-    app.run_server(debug=False, use_reloader=True)
+    app.run_server(debug=True, use_reloader=True)
 
