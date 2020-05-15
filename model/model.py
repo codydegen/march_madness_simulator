@@ -579,7 +579,7 @@ class Model:
 
         for special in special_scores['scores'].keys():
           assert special_scores['ranks'][special] > 0
-          assert not (special_scores['ranks'][special] == 1 and special_scores['scores'][special] < winning_score)
+          assert not (special_scores['ranks'][special] == 1 and special_scores['scores'][special] < winning_score and len(array)>1)
         for i in range(len(entry_list)):
           all_team_data['ranks'][i].append(rank_vector[i])
           all_team_data['placings'][i].append(placing_vector[i])

@@ -36,14 +36,14 @@ def prepare_ranks_graph(entry_results, special_results):
     group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
         figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
-                                    show_curve=True, show_hist=True, bin_size=1, 
+                                    show_curve=False, show_hist=True, bin_size=1, 
                                     histnorm='probability')
     except:
         print('Singular matrix error')
         for i in range(len(most_valuable_rank)):
             # Following code is potentially needed to prevent singular matrix error
             if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
-                print(' I decay')
+                print('IDK')
                 most_valuable_rank[i] += .0000000001
                 most_popular_rank[i] -= .0000000001
                 chalk_rank[i] += .000000001
@@ -68,7 +68,7 @@ def prepare_scores_graph(entry_results, special_results):
     hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
     group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
     figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
-                                show_curve=True, bin_size=10, 
+                                show_curve=False, bin_size=10, 
                                 histnorm='probability')
     figure.update_layout(
         title_text='Histogram of Final Scores',
@@ -110,17 +110,17 @@ def prepare_table(entry_results, special_results, sims):
         entry = {
             'Index': index,
             'Entry': name,
-            'First Places': get_sub_placings(ranks, 1),
-            'Second Places': get_sub_placings(ranks, 2),
-            'Third Places': get_sub_placings(ranks, 3),
+            '1st': get_sub_placings(ranks, 1),
+            '2nd': get_sub_placings(ranks, 2),
+            '3rd': get_sub_placings(ranks, 3),
             # 'Top Five': get_sub_placings(ranks, 5, inclusive=True),
             # 'Top Ten': get_sub_placings(ranks, 10, inclusive=True),
-            'First Quintile': percentiles[0],
-            'Second Quintile': percentiles[1]-percentiles[0],
-            'Third Quintile': percentiles[2]-percentiles[1],
-            'Fourth Quintile': percentiles[3]-percentiles[2],
-            'Fifth Quintile': percentiles[4]-percentiles[3],
-            'Average Placing': get_sub_placings(ranks, 0, average=True),
+            '1st Q.': percentiles[0],
+            '2nd Q.': percentiles[1]-percentiles[0],
+            '3rd Q.': percentiles[2]-percentiles[1],
+            '4th Q.': percentiles[3]-percentiles[2],
+            '5th Q.': percentiles[4]-percentiles[3],
+            'Avg Plc.': get_sub_placings(ranks, 0, average=True),
         }
         return entry
     # Get rankings and then sort them
@@ -250,10 +250,10 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 50
-number_entries = 10
+number_simulations = 1000
+number_entries = 100
 year = 2019
-gender = "mens"
+gender = "womens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
 m.batch_simulate()
 print("sims done")
@@ -270,23 +270,83 @@ special_wins = m.get_special_wins()
 special_results = all_results[-4:]
 entry_results = all_results[:-4]
 table_columns_pre=['Entry']
-table_columns=['First Places', 'Second Places', 'Third Places', 'First Quintile', 'Second Quintile', 'Third Quintile', 'Fourth Quintile', 'Fifth Quintile']
-table_columns_post=['Average Placing']
+table_columns_places=['1st', '2nd', '3rd'] 
+table_columns_quintiles=['1st Q.', '2nd Q.', '3rd Q.', '4th Q.', '5th Q.']
+table_columns_post=['Avg Plc.']
 
+def discrete_background_color_bins(df, n_bins=9, columns='all', dark_color='Blues'):
+    import colorlover
+    bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
+    if columns == 'all':
+        if 'id' in df:
+            df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
+        else:
+            df_numeric_columns = df.select_dtypes('number')
+    else:
+        df_numeric_columns = df[columns]
+    df_max = 1
+    df_min = 0
+    ranges = [
+        ((df_max - df_min) * i) + df_min
+        for i in bounds
+    ]
+    styles = []
+    for i in range(1, len(bounds)):
+        min_bound = ranges[i - 1]
+        max_bound = ranges[i]
+        backgroundColor = colorlover.scales[str(n_bins)]['seq'][dark_color][i - 1]
+        color = 'white' if i > len(bounds) / 2. else 'inherit'
 
+        for column in df_numeric_columns:
+            styles.append({
+                'if': {
+                    'filter_query': (
+                        '{{{column}}} >= {min_bound}' +
+                        (' && {{{column}}} < {max_bound}' if (i < len(bounds) - 1) else '')
+                    ).format(column=column, min_bound=min_bound, max_bound=max_bound),
+                    'column_id': column
+                },
+                'backgroundColor': backgroundColor,
+                'color': color
+            })
+
+    return styles
+
+table_data = prepare_table(entry_results, special_results, number_entries)
 # sub_results = random_subsample(number_entries)
 figures = [
     dt.DataTable(
         id="scoring-table",
         columns=[{"name": i, "id": i} for i in table_columns_pre]+ 
-                [{"name": i, "id": i, "type": "numeric", "format": FormatTemplate.percentage(1)} for i in table_columns] + 
+                [{"name": i, "id": i, "type": "numeric", "format": FormatTemplate.percentage(1)} for i in table_columns_places] + 
+                [{"name": i, "id": i, "type": "numeric", "format": FormatTemplate.percentage(1)} for i in table_columns_quintiles] +
                 [{"name": i, "id": i} for i in table_columns_post],
-        data=prepare_table(entry_results, special_results, number_entries),
-        editable=True,
+        data=table_data,
+        # editable=True,
+        # virtualization=True,
         row_selectable='single',
+        fixed_rows={'headers': True},
         selected_rows=[0],
         sort_action='native',
-        style_cell={'textAlign': 'left'},
+        style_cell={'textAlign': 'left',
+                    'width': '40px'},
+        style_table={'height': '300px', 'overflowY': 'auto'},
+        style_data_conditional=discrete_background_color_bins(df(data=table_data), columns=table_columns_quintiles)+
+                                discrete_background_color_bins(df(data=table_data), columns=table_columns_places, dark_color='Greens')+
+                                [{
+                                    'if': {
+                                        'filter_query': '{Index} < 4',  # matching rows of a hidden column with the id, `id`
+                                        'column_id': 'Entry'
+                                    },
+                                    'backgroundColor': 'rgb(255,248,220)'
+                                },
+                                {
+                                    'if': {'column_id': 'Entry'},
+                                    'width': '120px'
+                                },
+                                {
+
+                                }],
         ),
 
     create_bracket(), 
@@ -451,5 +511,5 @@ def fill_bracket_visualization(data, entryID):
 
 if __name__ == '__main__':
     # app.run_server(debug=True)
-    app.run_server(debug=True, use_reloader=True)
+    app.run_server(debug=False, use_reloader=False)
 
