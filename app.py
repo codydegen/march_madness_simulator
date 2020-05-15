@@ -3,6 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.figure_factory as ff
@@ -26,27 +27,29 @@ def get_array_from_dataframe(frame, array_type, data_type):
     return frame[frame['name']==data_type][array_type].values[0]
 
 # Ranks graph function
-def prepare_ranks_graph(entry_results, special_results):
-    most_valuable_rank = get_array_from_dataframe(special_results, 'ranks', 'most_valuable_teams')
-    most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
-    chalk_rank = get_array_from_dataframe(special_results, 'ranks', 'chalk')
+def prepare_ranks_graph(results):
+    group_labels = [result for result in results['name']]
+    array_results = [get_array_from_dataframe(results, 'ranks', result) for result in group_labels]
+    # most_valuable_rank = get_array_from_dataframe(special_results, 'ranks', 'most_valuable_teams')
+    # most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
+    # chalk_rank = get_array_from_dataframe(special_results, 'ranks', 'chalk')
     
 
-    hist_data = [most_valuable_rank, most_popular_rank, chalk_rank]
-    group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
+    hist_data = array_results
+    # group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
         figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                                     show_curve=False, show_hist=True, bin_size=1, 
                                     histnorm='probability')
     except:
         print('Singular matrix error')
-        for i in range(len(most_valuable_rank)):
-            # Following code is potentially needed to prevent singular matrix error
-            if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
-                print('IDK')
-                most_valuable_rank[i] += .0000000001
-                most_popular_rank[i] -= .0000000001
-                chalk_rank[i] += .000000001
+        # for i in range(len(most_valuable_rank)):
+        #     # Following code is potentially needed to prevent singular matrix error
+        #     if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
+        #         print('IDK')
+        #         most_valuable_rank[i] += .0000000001
+        #         most_popular_rank[i] -= .0000000001
+        #         chalk_rank[i] += .000000001
 
         figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
                             show_curve=False, show_hist=True, bin_size=1, 
@@ -59,15 +62,17 @@ def prepare_ranks_graph(entry_results, special_results):
     return figure
 
 # Scores graph function
-def prepare_scores_graph(entry_results, special_results):
-    overall_winning_score_values = get_array_from_dataframe(special_results, 'simulations', 'winning_score')
-    chalk_values = get_array_from_dataframe(special_results, 'simulations', 'chalk')
-    most_valuable_values = get_array_from_dataframe(special_results, 'simulations', 'most_valuable_teams')
-    most_popular_values = get_array_from_dataframe(special_results, 'simulations', 'most_popular_teams')
+def prepare_scores_graph(results):
+    # overall_winning_score_values = get_array_from_dataframe(special_results, 'simulations', 'winning_score')
+    group_labels = [result for result in results['name']]
+    array_results = [get_array_from_dataframe(results, 'simulations', result) for result in group_labels]
+    # chalk_values = get_array_from_dataframe(special_results, 'simulations', 'chalk')
+    # most_valuable_values = get_array_from_dataframe(special_results, 'simulations', 'most_valuable_teams')
+    # most_popular_values = get_array_from_dataframe(special_results, 'simulations', 'most_popular_teams')
 
-    hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
-    group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
-    figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
+    # hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
+    # group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
+    figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
                                 show_curve=False, bin_size=10, 
                                 histnorm='probability')
     figure.update_layout(
@@ -124,14 +129,6 @@ def prepare_table(entry_results, special_results, sims):
         }
         return entry
     # Get rankings and then sort them
-
-    # most_valuable_rank = get_array_from_dataframe(special_results, 'placings', 'most_valuable_teams')
-    # most_valuable_rank.sort()
-    # most_popular_rank = get_array_from_dataframe(special_results, 'placings', 'most_popular_teams')
-    # most_popular_rank.sort()
-    # chalk_rank = get_array_from_dataframe(special_results, 'placings', 'chalk')
-    # chalk_rank.sort()
-
     data_array = []
     data_array.append(convert_entry_to_dictionary(special_results, 'most_valuable_teams'))
     data_array.append(convert_entry_to_dictionary(special_results, 'most_popular_teams'))
@@ -168,10 +165,11 @@ def prepare_run_button_input():
 
 # Call back to update once results change
 @app.callback(
-    [Output(component_id='ranking-graph', component_property='figure'),
-     Output(component_id='scoring-table', component_property='data'),
+    # [Output(component_id='ranking-graph', component_property='figure'),
+     [Output(component_id='scoring-table', component_property='data'),
      Output(component_id='scoring-table', component_property='selected_rows'),
-     Output(component_id='winning-score-graph', component_property='figure')],
+     Output('hidden-dataframe', 'children')],
+    #  Output(component_id='winning-score-graph', component_property='figure')],
     [Input(component_id='run-input', component_property='n_clicks')],
     [State('number-entries-input', 'value'),
      State('number-simulations-input', 'value')])
@@ -179,11 +177,9 @@ def update_table(n_clicks, entry_input, simulations_input):
     filtered_dataframe = m.analyze_sublist(all_results, entry_input, simulations_input)
     filtered_special_results = filtered_dataframe[-4:]
     filtered_entry_results = filtered_dataframe[:-4]
-    ranks_figure = prepare_ranks_graph(filtered_entry_results, filtered_special_results)
     scoring_table = prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
-    winning_score_figure = prepare_scores_graph(filtered_entry_results, filtered_special_results)
     print("update complete")
-    return ranks_figure, scoring_table, [0], winning_score_figure
+    return scoring_table, [0, 1, 2], filtered_dataframe.to_json(orient='split')
 
 # Create each individual region
 def create_region(region, stages, initial_game_number):
@@ -250,8 +246,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 12
-number_entries = 10
+number_simulations = 1000
+number_entries = 100
 year = 2019
 gender = "womens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -311,11 +307,9 @@ def discrete_background_color_bins(df, n_bins=9, columns='all', dark_color='Blue
                 'backgroundColor': backgroundColor,
                 'color': color
             })
-
     return styles
 
 table_data = prepare_table(entry_results, special_results, number_entries)
-# sub_results = random_subsample(number_entries)
 figures = [
     dt.DataTable(
         id="scoring-table",
@@ -354,9 +348,9 @@ figures = [
     dcc.Dropdown(
         id='bracket-dropdown',
         options=[
-            {'label': 'most_popular_teams', 'value': -3},
+            {'label': 'most_valuable_teams', 'value': -2},
         ],
-        value=-3,
+        value=-2,
         # clearable=False
     ),]),
 
@@ -377,14 +371,14 @@ figures = [
     html.Div([
         prepare_run_button_input(),
     ], className="run-button"),
+    html.Div(id='hidden-dataframe', style={'display': 'none'}),
 ]
 figures.append(dcc.Graph(
     id='ranking-graph',
-    figure=prepare_ranks_graph(entry_results, special_results)))
-# figures.append(prepare_table(entry_results, special_results, number_simulations))
+    figure=prepare_ranks_graph(special_results[-3:])))
 figures.append(dcc.Graph(
     id='winning-score-graph',
-    figure=prepare_scores_graph(entry_results, special_results)))
+    figure=prepare_scores_graph(special_results[-3:])))
 
 app.layout = html.Div(figures)
 
@@ -419,15 +413,16 @@ output_list = create_output_list_for_bracket_callback()
 @app.callback(
     output_list, 
     [Input('bracket-dropdown', 'value')],
-    # [State("scoring-table", "data")]
+    # [State("bracket-dropdown", "value")]
 )
 def fill_bracket_visualization(entryID):
-    if entryID == []:
+    if entryID == None:
         print(' no entry ID provided')
-        output = [[html.Div('', id='game'+str(i)+'-team1', className='team team1 rnd1'),
-                   html.Div('', id='game'+str(i)+'-team2', className='team team2 rnd1'),
-    ] for i in range(63)]
-        return output
+        raise PreventUpdate
+    #     output = [[html.Div('', id='game'+str(i)+'-team1', className='team team1 rnd1'),
+    #                html.Div('', id='game'+str(i)+'-team2', className='team team2 rnd1'),
+    # ] for i in range(63)]
+        # return output
     team_ordering = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
     new_team_paths = [
          [[0, 0], [8, 0],  [12, 0], [14, 0], [60, 0], [62, 0], [62, 0]],
@@ -495,12 +490,8 @@ def fill_bracket_visualization(entryID):
         [[52, 0], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]],
         [[52, 1], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]], 
     ]
-    #! output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1 '),
-    #            html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2 '),
-    # ] for i in range(63)]
     output = [[i, i] for i in range(63)]
     i=0
-    # entry = m.get_entry(data[entryID[0]]['Index'])
     entry = m.get_entry(entryID)
     for semi_final_pairings in m.bracket_pairings:
         for region in semi_final_pairings:
@@ -520,17 +511,27 @@ def fill_bracket_visualization(entryID):
 
 @app.callback(
     [Output(component_id='bracket-dropdown', component_property='options'),
-    #  Output(component_id='ranking-graph', component_property='figure'),
-    #  Output(component_id='winning-score-graph', component_property='figure'),
+     Output(component_id='ranking-graph', component_property='figure'),
+     Output(component_id='winning-score-graph', component_property='figure'),
     ],
     [Input(component_id='scoring-table', component_property='data'),
-     Input(component_id='scoring-table', component_property='selected_rows')]
+     Input(component_id='scoring-table', component_property='selected_rows'),
+     Input('hidden-dataframe', 'children')]
 )
 # Update dropdown and also graphs with new entries
-def update_dropdown(data, entryID):
+def update_dropdown(data, entryID, json_filtered_dataframe):
+    filtered_dataframe = pd.read_json(json_filtered_dataframe, orient='split')
     dropdown_options=[{'label': data[row]['Entry'], 'value': data[row]['Index']} for row in entryID]
+    # filtered_dataframe = m.analyze_sublist(all_results, entry_input, simulations_input)
+    filtered_special_results = filtered_dataframe[-4:]
+    filtered_entry_results = filtered_dataframe[:-4]
+    index_list = [data[entry]['Index'] for entry in entryID]
+    filtered_results = filtered_dataframe[filtered_dataframe['entryID'].isin(index_list)]
+    ranks_figure = prepare_ranks_graph(filtered_results)
 
-    return [dropdown_options]#, ranking_graph, winning_score_graph
+    winning_score_figure = prepare_scores_graph(filtered_results)
+
+    return dropdown_options,ranks_figure, winning_score_figure
 
 if __name__ == '__main__':
     # app.run_server(debug=True)
