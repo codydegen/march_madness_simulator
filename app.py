@@ -15,6 +15,8 @@ import dash_table as dt
 import dash_table.FormatTemplate as FormatTemplate
 from dash_table.Format import Sign
 from pandas import DataFrame as df
+from collections import OrderedDict
+from plotly.colors import n_colors
 
 external_stylesheets = ['../assets/styles.css']
 
@@ -26,19 +28,24 @@ app.title='March Madness Simulator'
 def get_array_from_dataframe(frame, array_type, data_type):
     return frame[frame['name']==data_type][array_type].values[0]
 
+def count_occurrences(data):
+    dictionary = {}
+    increment = 1/len(data)
+    for i in data:
+        if not dictionary.get(i):
+            dictionary[i] = 0
+        dictionary[i] += increment
+    ordered = OrderedDict(sorted(dictionary.items()))
+    return ordered
+
 # Ranks graph function
 def prepare_ranks_graph(results):
     group_labels = [result for result in results['name']]
     array_results = [get_array_from_dataframe(results, 'ranks', result) for result in group_labels]
-    # most_valuable_rank = get_array_from_dataframe(special_results, 'ranks', 'most_valuable_teams')
-    # most_popular_rank = get_array_from_dataframe(special_results, 'ranks', 'most_popular_teams')
-    # chalk_rank = get_array_from_dataframe(special_results, 'ranks', 'chalk')
-    
 
     hist_data = array_results
-    # group_labels = ['Most Valuable Teams', 'Most Popular Teams', 'Chalk']
     try:
-        figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
+        figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
                                     show_curve=False, show_hist=True, bin_size=1, 
                                     histnorm='probability')
     except:
@@ -51,9 +58,9 @@ def prepare_ranks_graph(results):
         #         most_popular_rank[i] -= .0000000001
         #         chalk_rank[i] += .000000001
 
-        figure = ff.create_distplot(hist_data, group_labels, show_rug=False, 
-                            show_curve=False, show_hist=True, bin_size=1, 
-                            histnorm='probability')
+        figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
+                            show_curve=True, show_hist=False, bin_size=1, 
+                            histnorm='probability', opacity=0.5)
     figure.update_layout(
         title_text='Histogram of Final Placements',
         xaxis_title='Placing',
@@ -66,15 +73,36 @@ def prepare_scores_graph(results):
     # overall_winning_score_values = get_array_from_dataframe(special_results, 'simulations', 'winning_score')
     group_labels = [result for result in results['name']]
     array_results = [get_array_from_dataframe(results, 'simulations', result) for result in group_labels]
-    # chalk_values = get_array_from_dataframe(special_results, 'simulations', 'chalk')
-    # most_valuable_values = get_array_from_dataframe(special_results, 'simulations', 'most_valuable_teams')
-    # most_popular_values = get_array_from_dataframe(special_results, 'simulations', 'most_popular_teams')
 
     # hist_data = [overall_winning_score_values, chalk_values, most_valuable_values, most_popular_values]
     # group_labels = ['Winning Score', 'Chalk', 'Most Valuable', 'Most Popular']
+ 
+    # figure = go.Figure()
+    # converted_array_results = [count_occurrences(data) for data in array_results]
+    # for i in range(len(converted_array_results)):
+    #     figure.add_trace(go.Scatter(name=group_labels[i],x=list(converted_array_results[i].keys()),y=list(converted_array_results[i].values()))) 
+
     figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
-                                show_curve=False, bin_size=10, 
+                                show_curve=True, show_hist=False, bin_size=10, 
                                 histnorm='probability')
+    # colors = n_colors('rgb(5, 200, 200)', 'rgb(200, 10, 10)', 12, colortype='rgb')
+    # figure = go.Figure()
+    
+    # for array, label in zip(array_results, group_labels):
+    #     figure.add_trace(go.Violin(y=array, box_visible=False, line_color='black',
+    #                            meanline_visible=True,  opacity=0.6,
+    #                            x0=label))
+
+    # figure.update_layout(yaxis_zeroline=False)
+
+    # for array, color, name in zip(array_results, colors, group_labels):
+    #     figure.add_trace(go.Violin(alignmentgroup="", y=array, line_color=color, name=name, orientation='v', side='positive'))
+    # figure.update_traces(orientation='v', side='positive', meanline_visible=True,
+                #   points=False,
+                #   jitter=1.00,
+    # )
+    # figure.update_traces(orientation='h', side='positive', width=3, points=False)
+    # figure.update_layout(violinmode='overlay', violingroupgap=0, violingap=0)
     figure.update_layout(
         title_text='Histogram of Final Scores',
         xaxis_title='Score',
@@ -165,11 +193,9 @@ def prepare_run_button_input():
 
 # Call back to update once results change
 @app.callback(
-    # [Output(component_id='ranking-graph', component_property='figure'),
      [Output(component_id='scoring-table', component_property='data'),
      Output(component_id='scoring-table', component_property='selected_rows'),
      Output('hidden-dataframe', 'children')],
-    #  Output(component_id='winning-score-graph', component_property='figure')],
     [Input(component_id='run-input', component_property='n_clicks')],
     [State('number-entries-input', 'value'),
      State('number-simulations-input', 'value')])
@@ -188,8 +214,8 @@ def create_region(region, stages, initial_game_number):
         game_html_list = []
         for i in range(stages[stage]):
             game_html_list.append(html.Div([
-                html.Div('game'+str(initial_game_number)+' 1', id='game'+str(initial_game_number)+'-team1', className='team team1'),
-                html.Div('game'+str(initial_game_number)+' 2', id='game'+str(initial_game_number)+'-team2', className='team team2'),
+                html.Div('', id='game'+str(initial_game_number)+'-team1', className='team team1'),
+                html.Div('', id='game'+str(initial_game_number)+'-team2', className='team team2'),
             ], id='game'+str(initial_game_number), className=region+' '+stage+' g'+str(i)+' game'))
             initial_game_number+=1
         stage_html_list.append(
@@ -246,7 +272,7 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 1000
+number_simulations = 2000
 number_entries = 100
 year = 2019
 gender = "womens"
@@ -535,5 +561,6 @@ def update_dropdown(data, entryID, json_filtered_dataframe):
 
 if __name__ == '__main__':
     # app.run_server(debug=True)
-    app.run_server(debug=True, use_reloader=True)
+    # app.run_server(debug=True, use_reloader=True)
+    app.run_server(debug=False, use_reloader=False)
 
