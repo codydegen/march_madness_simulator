@@ -250,8 +250,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 1000
-number_entries = 100
+number_simulations = 12
+number_entries = 10
 year = 2019
 gender = "womens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -273,7 +273,9 @@ table_columns_pre=['Entry']
 table_columns_places=['1st', '2nd', '3rd'] 
 table_columns_quintiles=['1st Q.', '2nd Q.', '3rd Q.', '4th Q.', '5th Q.']
 table_columns_post=['Avg Plc.']
-
+###############################################################################
+################################ Global code ##################################
+###############################################################################
 def discrete_background_color_bins(df, n_bins=9, columns='all', dark_color='Blues'):
     import colorlover
     bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
@@ -324,7 +326,7 @@ figures = [
         data=table_data,
         # editable=True,
         # virtualization=True,
-        row_selectable='single',
+        row_selectable='multi',
         fixed_rows={'headers': True},
         selected_rows=[0],
         sort_action='native',
@@ -348,6 +350,15 @@ figures = [
 
                                 }],
         ),
+    html.Div([
+    dcc.Dropdown(
+        id='bracket-dropdown',
+        options=[
+            {'label': 'most_popular_teams', 'value': -3},
+        ],
+        value=-3,
+        # clearable=False
+    ),]),
 
     create_bracket(), 
     html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
@@ -407,15 +418,14 @@ output_list = create_output_list_for_bracket_callback()
 
 @app.callback(
     output_list, 
-    [Input(component_id='scoring-table', component_property='data'),
-     Input(component_id='scoring-table', component_property='selected_rows')],
+    [Input('bracket-dropdown', 'value')],
     # [State("scoring-table", "data")]
 )
-def fill_bracket_visualization(data, entryID):
-    if entryID == None:
+def fill_bracket_visualization(entryID):
+    if entryID == []:
         print(' no entry ID provided')
-        output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1'),
-                   html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
+        output = [[html.Div('', id='game'+str(i)+'-team1', className='team team1 rnd1'),
+                   html.Div('', id='game'+str(i)+'-team2', className='team team2 rnd1'),
     ] for i in range(63)]
         return output
     team_ordering = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
@@ -485,12 +495,13 @@ def fill_bracket_visualization(data, entryID):
         [[52, 0], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]],
         [[52, 1], [56, 1], [58, 1], [59, 1], [61, 1], [62, 1], [62, 1]], 
     ]
-    output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1'),
-               html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2'),
-    ] for i in range(63)]
+    #! output = [[html.Div('game'+str(i)+' 1', id='game'+str(i)+'-team1', className='team team1 '),
+    #            html.Div('game'+str(i)+' 2', id='game'+str(i)+'-team2', className='team team2 '),
+    # ] for i in range(63)]
     output = [[i, i] for i in range(63)]
     i=0
-    entry = m.get_entry(data[entryID[0]]['Index'])
+    # entry = m.get_entry(data[entryID[0]]['Index'])
+    entry = m.get_entry(entryID)
     for semi_final_pairings in m.bracket_pairings:
         for region in semi_final_pairings:
             picks = entry.team_picks[region]
@@ -507,9 +518,21 @@ def fill_bracket_visualization(data, entryID):
                         i+=1
     return output
 
+@app.callback(
+    [Output(component_id='bracket-dropdown', component_property='options'),
+    #  Output(component_id='ranking-graph', component_property='figure'),
+    #  Output(component_id='winning-score-graph', component_property='figure'),
+    ],
+    [Input(component_id='scoring-table', component_property='data'),
+     Input(component_id='scoring-table', component_property='selected_rows')]
+)
+# Update dropdown and also graphs with new entries
+def update_dropdown(data, entryID):
+    dropdown_options=[{'label': data[row]['Entry'], 'value': data[row]['Index']} for row in entryID]
 
+    return [dropdown_options]#, ranking_graph, winning_score_graph
 
 if __name__ == '__main__':
     # app.run_server(debug=True)
-    app.run_server(debug=False, use_reloader=False)
+    app.run_server(debug=True, use_reloader=True)
 

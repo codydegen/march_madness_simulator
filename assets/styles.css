@@ -510,7 +510,7 @@ there.
 .rnd3 {font-size: 13px; border-width: 4px;}
 .rnd4 {font-size: 15px; border-width: 5px;}
 .rnd5 {font-size: 18px; border-width: 6px;}
-.rnd6 {font-size: 22px; border-width: 7px;}
+.rnd6 {font-size: 20px; border-width: 6.5px;}
 
 .bounding-r1, .bounding-r2, .bounding-r3, .bounding-r4 {
    display: flex;
