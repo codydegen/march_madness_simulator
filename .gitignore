@@ -1,7 +1,8 @@
 # CD's gitignore files
 
 # Database (too large)
-mens2019.db
+db/backups/
+# mens2019.db
 
 # testing files
 test_files/

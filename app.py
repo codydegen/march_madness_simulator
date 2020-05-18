@@ -272,10 +272,10 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 2000
-number_entries = 100
+number_simulations = 5000
+number_entries = 500
 year = 2019
-gender = "womens"
+gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
 m.batch_simulate()
 print("sims done")
@@ -335,7 +335,7 @@ def discrete_background_color_bins(df, n_bins=9, columns='all', dark_color='Blue
             })
     return styles
 
-table_data = prepare_table(entry_results, special_results, number_entries)
+table_data = prepare_table(entry_results, special_results, number_simulations)
 figures = [
     dt.DataTable(
         id="scoring-table",

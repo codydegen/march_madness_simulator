@@ -120,8 +120,9 @@ def main(database):
     create_table(conn, sql_create_picks_table)
     create_table(conn, sql_create_users_table)
     create_table(conn, sql_create_user_entries_table)
+    print("Database created!")
   else:
     print("Error! cannot create the database connection.")
  
 if __name__ == '__main__':
-  main("db/womens2019.db")
+  main("db/test_db.db")
