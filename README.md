@@ -38,10 +38,8 @@ The purpose here is to leverage what we know about other people to pick some tea
   * You're in a pool with a lot of people who are fans of a specific team in the tournament. No matter how good or bad that team is, people are to be picking them to go much further than they should be.  You can exploit that by picking a relatively early exit for that team.
 
 ## To-Do
-* Add other entries to table
 * Determine whether choosing explicit entries or calculating based on entire group is better
 * Improve bracket output
-* add selected bracket to other histograms
 * Long-term:
   * knowing who the best teams are
     * enhance model to update elo after early round wins (Low priority)

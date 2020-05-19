@@ -24,7 +24,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 app.title='March Madness Simulator'
 # Helper function
-# TODO There is probably a more effective way of doing this in pandas 
+# TODO There may be a more effective way of doing this in pandas 
 def get_array_from_dataframe(frame, array_type, data_type):
     return frame[frame['name']==data_type][array_type].values[0]
 
@@ -50,17 +50,10 @@ def prepare_ranks_graph(results):
                                     histnorm='probability')
     except:
         print('Singular matrix error')
-        # for i in range(len(most_valuable_rank)):
-        #     # Following code is potentially needed to prevent singular matrix error
-        #     if most_valuable_rank[i] == most_popular_rank[i] and most_valuable_rank[i] == chalk_rank[i]:
-        #         print('IDK')
-        #         most_valuable_rank[i] += .0000000001
-        #         most_popular_rank[i] -= .0000000001
-        #         chalk_rank[i] += .000000001
-
-        figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
-                            show_curve=True, show_hist=False, bin_size=1, 
-                            histnorm='probability', opacity=0.5)
+        raise PreventUpdate
+        # figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
+                            # show_curve=False, show_hist=True, bin_size=1, 
+                            # histnorm='probability', opacity=0.5)
     figure.update_layout(
         title_text='Histogram of Final Placements',
         xaxis_title='Placing',
@@ -83,7 +76,7 @@ def prepare_scores_graph(results):
     #     figure.add_trace(go.Scatter(name=group_labels[i],x=list(converted_array_results[i].keys()),y=list(converted_array_results[i].values()))) 
 
     figure = ff.create_distplot(array_results, group_labels, show_rug=False, 
-                                show_curve=True, show_hist=False, bin_size=10, 
+                                show_curve=False, show_hist=True, bin_size=10, 
                                 histnorm='probability')
     # colors = n_colors('rgb(5, 200, 200)', 'rgb(200, 10, 10)', 12, colortype='rgb')
     # figure = go.Figure()
@@ -167,16 +160,24 @@ def prepare_table(entry_results, special_results, sims):
     print("updating table viz")
     return data_array
 
+# As currently written, changing the maximum value here is okay. Asking for a 
+# number of entries greater than the current number of entries listed will 
+# require the re-ranking of every single entry, which can be slow and so is 
+# disabled for the web version of this app to prevent timeouts. However, this 
+# can be changed if you're running this locally.
 def prepare_number_entries_input():
     entries_input = dcc.Input(
         id='number-entries-input',
         type='number',
         value=number_entries,
-        max=10000,
+        max=number_entries,
         min=0
     )
     return entries_input 
 
+# Unlike with the number of entries, the number of simulations cannot exceed 
+# the original number simulations run. If you want to add simulations you will 
+# need to restart from the very beginning with a greater number.
 def prepare_number_simulations_input():
     simulations_input = dcc.Input(
         id='number-simulations-input',
@@ -191,7 +192,7 @@ def prepare_run_button_input():
     button = html.Button(id='run-input', n_clicks=0, children='Rerun Analysis')
     return button
 
-# Call back to update once results change
+# Callback to update once results change
 @app.callback(
      [Output(component_id='scoring-table', component_property='data'),
      Output(component_id='scoring-table', component_property='selected_rows'),
@@ -203,7 +204,6 @@ def update_table(n_clicks, entry_input, simulations_input):
     global all_results
     current_number_of_entries = len(all_results['entryID'])-4
     if current_number_of_entries < entry_input:
-
         m.add_bulk_entries_from_database(entry_input-current_number_of_entries)
         m.add_simulation_results_postprocessing()
         all_results = m.output_results()
@@ -216,7 +216,7 @@ def update_table(n_clicks, entry_input, simulations_input):
     filtered_entry_results = filtered_dataframe[:-4]
     scoring_table = prepare_table(filtered_entry_results, filtered_special_results, simulations_input)
     print("update complete")
-    return scoring_table, [0, 1, 2], filtered_dataframe.to_json(orient='split')
+    return scoring_table, [0, 1], filtered_dataframe.to_json(orient='split')
 
 # Create each individual region
 def create_region(region, stages, initial_game_number):
@@ -244,7 +244,6 @@ def create_bracket():
         'n16' : 2,
         'n8' : 1
     }
-
     bounding_html_list = []
     left_region_html_list = []
     left_region_html_list.append(create_region('r1', stages, 0))
@@ -257,20 +256,20 @@ def create_bracket():
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('ff g1 1', id='game60-team1', className='team team1'),
-            html.Div('ff g1 2', id='game60-team2', className='team team2'),
+            html.Div('', id='game60-team1', className='team team1'),
+            html.Div('', id='game60-team2', className='team team2'),
         ], className='n4 g1')], id='game60', className='final-four-bounding inner-bounding game')
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('f g1 1', id='game62-team1', className='team team1'),
-            html.Div('f g1 2', id='game62-team2', className='team team2'),
+            html.Div('', id='game62-team1', className='team team1'),
+            html.Div('', id='game62-team2', className='team team2'),
         ], className='n2 g1')], id='game62', className='finals-bounding inner-bounding game')
     )
     bounding_html_list.append(
         html.Div([html.Div([
-            html.Div('ff g2 1', id='game61-team1', className='team team1'),
-            html.Div('ff g2 2', id='game61-team2', className='team team2'),
+            html.Div('', id='game61-team1', className='team team1'),
+            html.Div('', id='game61-team2', className='team team2'),
         ], className='n4 g2')], id='game61', className='final-four-bounding inner-bounding game')
     )
     bounding_html_list.append(
@@ -283,8 +282,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 1000
-number_entries = 100
+number_simulations = 3000
+number_entries = 30
 year = 2019
 gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -347,6 +346,7 @@ def discrete_background_color_bins(df, n_bins=9, columns='all', dark_color='Blue
 
 table_data = prepare_table(entry_results, special_results, number_simulations)
 figures = [
+    html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
     dt.DataTable(
         id="scoring-table",
         columns=[{"name": i, "id": i} for i in table_columns_pre]+ 
@@ -391,7 +391,6 @@ figures = [
     ),]),
 
     create_bracket(), 
-    html.H1('Simulation Of '+gender.capitalize()[:-1]+'\'s March Madness Brackets: '+str(year)),
     html.Div([
         html.Div([
             html.H6('Number Of Entries'),
