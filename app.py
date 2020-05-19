@@ -284,7 +284,7 @@ def create_bracket():
 ################################ Global code ##################################
 ###############################################################################
 number_simulations = 1000
-number_entries = 1000
+number_entries = 100
 year = 2019
 gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -294,7 +294,7 @@ m.create_json_files()
 m.update_entry_picks()
 m.initialize_special_entries()
 m.analyze_special_entries()
-m.add_bulk_entries_from_database(2)
+m.add_bulk_entries_from_database(number_entries)
 m.add_simulation_results_postprocessing()
 all_results = m.output_results()
 all_results = m.output_results()
