@@ -1,7 +1,7 @@
 # march_madness
 
 ## Intro
-This is a program to simulate March Madness so high-value teams can be identified for the purposes of creating the optimal bracket.  Visualizations of the results for brackets for the March Madness Simulations are shown. Depending on the size of the pool entered, you can hopefully make some informed decisions on whether to go for a high-variance strategy (i.e., pick an out-of-left-field winner, make some savvy underdog picks) or just play it safe (pick a high seed to win, generally err on the side of less chaos).
+This is a program to simulate March Madness so high-value teams can be identified for the purposes of creating the optimal bracket.  Visualizations of the results for entries for the March Madness Simulations are shown. Depending on the size of the pool entered, you can hopefully make some informed decisions on whether to go for a high-variance strategy (i.e., pick an out-of-left-field winner, make some savvy underdog picks) or just play it safe (pick a high seed to win, generally err on the side of less chaos).
 
 Current build can be found [here](https://cd-march-madness.herokuapp.com/).
 
@@ -38,12 +38,19 @@ The purpose here is to leverage what we know about other people to pick some tea
   * You're in a pool with a lot of people who are fans of a specific team in the tournament. No matter how good or bad that team is, people are to be picking them to go much further than they should be.  You can exploit that by picking a relatively early exit for that team.
 
 ## To-Do
-* Determine whether choosing explicit entries or calculating based on entire group is better
-* Improve bracket output
+* Immediate:
+  * Make bracket output scale with browser size
+  * Update documentation
 * Long-term:
-  * knowing who the best teams are
-    * enhance model to update elo after early round wins (Low priority)
-  * knowing who other people are picking
-    * compare expected points versus who picked percentage
-    * estimate homer factor (Low priority)
-  * implement unit testing ( should be high-priority but this project is going on for so long that it'll probably end up not happening )
+  * Enhance algorithm to develop bracket
+    * Utilize who picked data to identify under-picked teams (Compare expected points versus picked percentage)
+    * Enhance model to update elo after early round wins
+  * Make output more user-friendly
+    * Allow live input of entry
+    * Allow entry or group import
+    * Retain selected brackets when running subgroup analysis
+    * Allow hot swapping between model inputs (swap between men's and women's natively, scoring system, increase number simulations or entries)
+  * Allow for algorithmic creation of dummy brackets using who picked data
+  * Structural:
+    * Implement unit testing
+    * Host database off-site to allow for larger data sets
