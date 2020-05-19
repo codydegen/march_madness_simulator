@@ -17,6 +17,8 @@ from dash_table.Format import Sign
 from pandas import DataFrame as df
 from collections import OrderedDict
 from plotly.colors import n_colors
+import os
+import json
 
 external_stylesheets = ['../assets/styles.css']
 
@@ -282,7 +284,7 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 3000
+number_simulations = 20
 number_entries = 30
 year = 2019
 gender = "mens"
@@ -528,17 +530,30 @@ def fill_bracket_visualization(entryID):
     output = [[i, i] for i in range(63)]
     i=0
     entry = m.get_entry(entryID)
+    current_path = os.path.dirname(__file__)
+    file_path = r'team_data/shorthand_names.json'
+    shorthand_name_path = os.path.join(current_path, file_path)
+    shorthand_names = json.load(open(shorthand_name_path, "r"))
     for semi_final_pairings in m.bracket_pairings:
         for region in semi_final_pairings:
             picks = entry.team_picks[region]
             for team_seed in team_ordering:
                 for team in picks[str(team_seed)]:
                     if picks[str(team_seed)][team] > 0:
-                        team_name = str(team_seed)+' '+team
                         wins = picks[str(team_seed)][team]
+                        # team_name = str(team_seed)+' '+team
+                        if team in shorthand_names and wins>=5:
+                            team_name = str(team_seed)+' '+shorthand_names[team]
+                        else:
+                            team_name = str(team_seed)+' '+team
+
                         output[new_team_paths[i][wins-1][0]][new_team_paths[i][wins-1][1]] = html.Div(
                             team_name, id='game'+str(i)+'-team'+str(new_team_paths[i][wins-1][1]+1), className='team rnd'+str(wins))
                         for j in range(wins-2, -1, -1):
+                            if team in shorthand_names and j>=4:
+                                team_name = str(team_seed)+' '+shorthand_names[team]
+                            else:
+                                team_name = str(team_seed)+' '+team
                             output[new_team_paths[i][j][0]][new_team_paths[i][j][1]] = html.Div(
                             team_name, id='game'+str(i)+'-team'+str(new_team_paths[i][j][1]+1), className='team-win team rnd'+str(j+1))
                         i+=1

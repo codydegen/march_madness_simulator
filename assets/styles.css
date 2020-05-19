@@ -443,7 +443,7 @@ there.
 
 .bounding-bracket {
   display: flex;
-  width: 1100px;
+  width: 1120px;
   margin: 20px auto;
 }
 
@@ -458,29 +458,7 @@ there.
   
 }
 
-.inner-bounding.n64 > div {
-  height: calc(var(--bracket-height) / 16 - var(--n64-margin) * 2);
-  /* background-color: green; */
-  margin: var(--n64-margin) 1px;
-  /* margin-bottom: 2px; */
-}
 
-.inner-bounding.n32 > div {
-  height: calc(var(--bracket-height) / 8 - var(--n32-margin) * 2);
-  /* background-color: green; */
-  margin: var(--n32-margin) 1px;
-  /* margin-bottom: 2px; */
-}
-
-.inner-bounding.n16 > div {
-  height: calc(var(--bracket-height) / 4 - var(--n16-margin) * 2);
-  margin: var(--n16-margin) 1px;
-}
-
-.inner-bounding.n8 > div {
-  height: calc(var(--bracket-height) / 2 - var(--n8-margin) * 2);
-  margin: var(--n8-margin) 1px;
-}
 
 .inner-bounding {
   display: flex;
@@ -514,7 +492,35 @@ there.
   margin: 20px auto;
 }
 
+.inner-bounding.n64 {
+  width: 110px;
+}
 
+.inner-bounding.n64 > div {
+  height: calc(var(--bracket-height) / 16 - var(--n64-margin) * 2);
+  /* background-color: green; */
+  margin: var(--n64-margin) 0px;
+  /* margin-bottom: 2px; */
+}
+
+
+
+.inner-bounding.n32 > div {
+  height: calc(var(--bracket-height) / 8 - var(--n32-margin) * 2);
+  /* background-color: green; */
+  margin: var(--n32-margin) 1px;
+  /* margin-bottom: 2px; */
+}
+
+.inner-bounding.n16 > div {
+  height: calc(var(--bracket-height) / 4 - var(--n16-margin) * 2);
+  margin: var(--n16-margin) 1px;
+}
+
+.inner-bounding.n8 > div {
+  height: calc(var(--bracket-height) / 2 - var(--n8-margin) * 2);
+  margin: var(--n8-margin) 1px;
+}
 
 /* .inner-bounding > div:first-child {
   margin-top: 0;
