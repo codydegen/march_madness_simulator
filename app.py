@@ -172,7 +172,7 @@ def prepare_number_entries_input():
         id='number-entries-input',
         type='number',
         value=number_entries,
-        max=number_entries,
+        max=10000,
         min=0
     )
     return entries_input 
@@ -200,6 +200,17 @@ def prepare_run_button_input():
     [State('number-entries-input', 'value'),
      State('number-simulations-input', 'value')])
 def update_table(n_clicks, entry_input, simulations_input):
+    global all_results
+    current_number_of_entries = len(all_results['entryID'])-4
+    if current_number_of_entries < entry_input:
+
+        m.add_bulk_entries_from_database(entry_input-current_number_of_entries)
+        m.add_simulation_results_postprocessing()
+        all_results = m.output_results()
+        special_wins = m.get_special_wins()
+        special_results = all_results[-4:]
+        entry_results = all_results[:-4]
+    
     filtered_dataframe = m.analyze_sublist(all_results, entry_input, simulations_input)
     filtered_special_results = filtered_dataframe[-4:]
     filtered_entry_results = filtered_dataframe[:-4]
@@ -272,8 +283,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 5000
-number_entries = 500
+number_simulations = 10000
+number_entries = 100
 year = 2019
 gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
@@ -283,10 +294,9 @@ m.create_json_files()
 m.update_entry_picks()
 m.initialize_special_entries()
 m.analyze_special_entries()
-m.add_bulk_entries_from_database(number_entries)
+m.add_bulk_entries_from_database(2)
 m.add_simulation_results_postprocessing()
-
-
+all_results = m.output_results()
 all_results = m.output_results()
 special_wins = m.get_special_wins()
 special_results = all_results[-4:]
@@ -561,6 +571,6 @@ def update_dropdown(data, entryID, json_filtered_dataframe):
 
 if __name__ == '__main__':
     # app.run_server(debug=True)
-    # app.run_server(debug=True, use_reloader=True)
-    app.run_server(debug=False, use_reloader=False)
+    app.run_server(debug=True, use_reloader=True)
+    # app.run_server(debug=False, use_reloader=False)
 

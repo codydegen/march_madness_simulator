@@ -335,9 +335,14 @@ class Model:
 
   def add_simulation_results_postprocessing(self):
     self.actual_results = Simulation_results(self, actual=True)
-    for i in range(0, self.number_simulations):
-      self.simulation_results.append(Simulation_results(self, index=i))
+    if len(self.simulation_results) == 0:
+      for i in range(0, self.number_simulations):
+        self.simulation_results.append(Simulation_results(self, index=i))
     pass
+
+  def refresh_scoring_list(self):
+    for simulation in self.simulation_results:
+      simulation.import_scoring_list()
 
   def prep_data(self, path):
     # Probably never going to use this
@@ -394,6 +399,7 @@ class Model:
       # I should be passing in just the data instead of initializing an object 
       # here. trying to think of a better structure
       self.add_entry(Entry(model=self, method="database", source=entry))
+    self.refresh_scoring_list()
 
   def update_special_entry_score(self, entry, entry_name):
     for region in self.all_teams:
