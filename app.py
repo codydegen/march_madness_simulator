@@ -128,10 +128,10 @@ def prepare_table(entry_results, special_results, sims):
         ranks = get_array_from_dataframe(dataframe, 'placings', name)
         ranks.sort()
         index = dataframe[dataframe['name'] == name]['entryID'].values[0]
-        percentiles = [get_sub_placings(ranks, 20, percentile=True), 
-                       get_sub_placings(ranks, 40, percentile=True), 
-                       get_sub_placings(ranks, 60, percentile=True), 
-                       get_sub_placings(ranks, 80, percentile=True), 
+        percentiles = [get_sub_placings(ranks, 25, percentile=True), 
+                       get_sub_placings(ranks, 50, percentile=True), 
+                       get_sub_placings(ranks, 75, percentile=True), 
+                    #    get_sub_placings(ranks, 80, percentile=True), 
                        1]
         entry = {
             'Index': index,
@@ -145,7 +145,7 @@ def prepare_table(entry_results, special_results, sims):
             '2nd Q.': percentiles[1]-percentiles[0],
             '3rd Q.': percentiles[2]-percentiles[1],
             '4th Q.': percentiles[3]-percentiles[2],
-            '5th Q.': percentiles[4]-percentiles[3],
+            # '5th Q.': percentiles[4]-percentiles[3],
             'Avg Plc.': get_sub_placings(ranks, 0, average=True),
         }
         return entry
@@ -302,7 +302,7 @@ special_results = all_results[-4:]
 entry_results = all_results[:-4]
 table_columns_pre=['Entry']
 table_columns_places=['1st', '2nd'] 
-table_columns_quintiles=['1st Q.', '2nd Q.', '3rd Q.', '4th Q.', '5th Q.']
+table_columns_quintiles=['1st Q.', '2nd Q.', '3rd Q.', '4th Q.']
 table_columns_post=['Avg Plc.']
 ###############################################################################
 ################################ Global code ##################################
