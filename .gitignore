@@ -9,6 +9,9 @@ web_scraper/*/top_level_results/*
 # testing files
 test_files/
 
+# Extraneous animation files for documentation
+*.stg
+*.gif
 
 # Created by https://www.gitignore.io/api/python,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=python,visualstudiocode

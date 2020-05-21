@@ -231,7 +231,7 @@ def create_region(region, stages, initial_game_number):
             initial_game_number+=1
         stage_html_list.append(
             html.Div(game_html_list, className='inner-bounding '+stage))
-    return html.Div(stage_html_list, className='bounding-'+region)
+    return html.Div(stage_html_list, className='region-container bounding-'+region)
 
 
 # Create the outline of the bracket used for visualizations
@@ -282,7 +282,7 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 2000
+number_simulations = 3000
 number_entries = 50
 year = 2019
 gender = "mens"
@@ -369,7 +369,7 @@ figures = [
     'Select entries in the table to visualize the picks, or see how they stack'+
     ' up by placement or by raw score.  If you\'d like to see the results for'+
     ' a small group of entries or simulations, scroll to the bottom and you '+
-    'can see how things might change.  Check back (hopefully) in 2021 for help'+
+    'can see how things might change.  Check back (hopefully) in 2021 for help '+
     'building the ideal bracket for any pool size!']),
     dt.DataTable(
         id="scoring-table",
@@ -431,10 +431,10 @@ figures = [
             prepare_number_simulations_input(),
             html.P('Maximum: '+str(number_simulations)),
         ], className="simulations-box"),
-        ], className="bounding-box"),
+        ], id="subgroup-bounding-box"),
     html.Div([
         prepare_run_button_input(),
-    ], className="run-button"),
+    ], id="run-button"),
     html.Div(id='hidden-dataframe', style={'display': 'none'}),
 ]
 
@@ -596,6 +596,6 @@ def update_dropdown(data, entryID, json_filtered_dataframe):
     return dropdown_options,ranks_figure, winning_score_figure
 
 if __name__ == '__main__':
-    # app.run_server(debug=True, use_reloader=True)
-    app.run_server(debug=False, use_reloader=False)
+    app.run_server(debug=True, use_reloader=True)
+    # app.run_server(debug=False, use_reloader=False)
 
