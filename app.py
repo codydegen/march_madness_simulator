@@ -596,6 +596,6 @@ def update_dropdown(data, entryID, json_filtered_dataframe):
     return dropdown_options,ranks_figure, winning_score_figure
 
 if __name__ == '__main__':
-    app.run_server(debug=True, use_reloader=True)
-    # app.run_server(debug=False, use_reloader=False)
+    # app.run_server(debug=True, use_reloader=True)
+    app.run_server(debug=False, use_reloader=False)
 
