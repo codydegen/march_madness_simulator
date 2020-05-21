@@ -264,44 +264,8 @@ def get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_
   for team in team_table:
     # team_id = team[0]
     wins_array.append(team_picks[team[2]][str(team[3])][team[1]])
-    # picks_query = '''INSERT OR IGNORE INTO picks (id, entry_id, team_id, wins) 
-    #                       VALUES (?,?,?,?)'''
-    # picks_data = (pick_id, entry_id, team_id, wins)
-    # current.execute(picks_query, picks_data)
   return wins_array  
 
-
-def migrate_entries_from_picks_to_entries(db):
-  # Get all data from current entries table
-  current = db.cursor()
-  entries_query = '''SELECT * FROM entries'''
-  entries_table = current.execute(entries_query).fetchall()
-  
-  team_array = []
-  for i in range(1,69):
-    team_array.append("team_"+str(i)+"_wins")
-
-  # port it into entries migrated table
-  for entry in entries_table:
-    picks_query = '''SELECT * FROM  picks WHERE entry_id = ?'''
-    picks_table = current.execute(picks_query, tuple([entry[0]])).fetchall()
-
-    picks_data = [entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]]
-    for p in picks_table:
-      picks_data.append(p[3])
-    if len(picks_table) == 0:
-      entry_query = '''INSERT OR IGNORE INTO entries_migrated (id, name, espn_score, espn_percentile, predicted_score_winner, predicted_score_loser)
-                        VALUES (?'''+",?"*(len(picks_data)-1)+''')'''
-    else:
-      entry_query = '''INSERT OR IGNORE INTO entries_migrated (id, name, espn_score, espn_percentile, predicted_score_winner, predicted_score_loser,'''+", ".join(team_array)+''')
-                          VALUES (?'''+",?"*(len(picks_data)-1)+''')'''
-    entry_data = tuple(picks_data)
-    current.execute(entry_query, entry_data)
-    db.commit()
-    print("commited entry ID "+str(entry[0]))
-  
-  # Iterate through pics table and add pics to entries
-  pass
 
 def main(gender):
   team_data = r'..\\web_scraper\\womens2019\\preliminary_results.json'

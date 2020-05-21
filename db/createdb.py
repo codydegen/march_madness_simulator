@@ -95,17 +95,6 @@ def main(database):
                                           FOREIGN KEY (entry_id) REFERENCES entries (id),
                                           FOREIGN KEY (user_id) REFERENCES users (id)
                                       );'''
-
-  sql_create_picks_table = ''' CREATE TABLE IF NOT EXISTS picks (
-                                  id text PRIMARY KEY
-                                    UNIQUE ON CONFLICT IGNORE,
-                                  entry_id integer NOT NULL,
-                                  team_id integer NOT NULL,
-                                  wins integer NOT NULL,
-                                  FOREIGN KEY (entry_id) REFERENCES entries (id),
-                                  FOREIGN KEY (team_id) REFERENCES teams (id)
-                              );'''
-
  
   # create a database connection
   conn = create_connection(database)
@@ -116,8 +105,7 @@ def main(database):
     create_table(conn, sql_create_teams_table)
     create_table(conn, sql_create_entries_table)
     create_table(conn, sql_create_groups_table)
-    create_table(conn, sql_create_group_entries_table)
-    create_table(conn, sql_create_picks_table)
+    create_table(conn, sql_create_group_entries_table)If
     create_table(conn, sql_create_users_table)
     create_table(conn, sql_create_user_entries_table)
     print("Database created!")

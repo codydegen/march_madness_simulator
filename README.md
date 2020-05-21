@@ -13,12 +13,18 @@ Current build can be found [here](https://cd-march-madness.herokuapp.com/).
 * [Dash](https://plotly.com/dash/), [plotly](https://plotly.com/) for data visualization
 * [Heroku](https://www.heroku.com/) for hosting
 
-## Getting started
+## Getting Started
 * Find the deployed website at http://cd-march-madness.herokuapp.com/
-* Or run locally by
-  * install python3
-  * pip install -r requirements.txt --user
-  * python -m app
+* Additional features can be accessed by cloning the repository and running it locally. These features include:
+  * Increase the number of entries or simulations
+  * Run using women's March Madness data
+  * Run using a different scoring system (ESPN Bracket Challenge's scoring system used by default)
+* To run locally, do the following:
+  * Clone the repository to your workstation
+  * Ensure that Python 3.8.2 is installed
+  * Run `pip install -r requirements.txt --user` 
+  * Run `python -m app`
+  * Open on [127.0.0.1:8050](http://127.0.0.1:8050/)
   * See further documentation on workflow [here](/workflow.md) 
 
 ## Methodology

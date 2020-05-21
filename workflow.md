@@ -1,4 +1,4 @@
-The general workflow if downloading yourself is as follows:
+The general workflow if downloading yourself for a data set with no data is Below.  The use case for this would be updating this tool for a new year. For example, 2021.
 
 1. Gather team data from 538 and ESPN 
    * Run `check_ff_data_exists()` from who_picked_scrape.py in /web_scraper 
@@ -29,3 +29,4 @@ The general workflow if downloading yourself is as follows:
 5. Visualize data
    * Running *app.py* will run a local server visualizing the data in various ways.  
    * The data can also be found online at http://cd-march-madness.herokuapp.com/
+
