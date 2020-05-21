@@ -26,7 +26,6 @@ TBD
 
 ## To-Do
 * Immediate:
-  * Make bracket output scale with browser size
   * Update documentation
 * Long-term:
   * Enhance algorithm to develop bracket
