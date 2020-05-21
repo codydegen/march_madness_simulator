@@ -283,7 +283,7 @@ def create_bracket():
 ################################ Global code ##################################
 ###############################################################################
 number_simulations = 3000
-number_entries = 50
+number_entries = 60
 year = 2019
 gender = "mens"
 m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)

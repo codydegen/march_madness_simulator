@@ -418,6 +418,10 @@ there.
   --n2-margin: 144px;
 }
 
+p {
+  max-width: 1100px;
+}
+
 .region-container {
   /* height: 25%; */
   width: 100%;
