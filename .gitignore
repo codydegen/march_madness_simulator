@@ -3,7 +3,7 @@
 # Database and extraneous jsons (too large)
 db/backups/
 web_scraper/*/top_level_results/*
-# web_scraper/*/bracket_level_results/*
+web_scraper/*/bracket_results/*
 
 # testing files
 test_files/
