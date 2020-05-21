@@ -1,9 +1,16 @@
 # March Madness Simulator
 
+* [Intro](#intro)
+* [Getting Started](#getting-started)
+* [How it Works](#how-it-works)
+* [Technologies](#technologies)
+* [To-Do](#to-do)
+
+
 ## Intro
 March Madness Simulator was developed to examine picking strategies for different pool sizes to help you make more informed decisions when filling out a bracket.
 
-![animation showcase](\assets\images\animation.gif)
+![animation showcase](/assets/images/animation.gif)
 
 Find the brackets that windmills consistently, use examples to identify under picked teams, and learn how to stack the odds in your favor.
 
