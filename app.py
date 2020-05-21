@@ -21,8 +21,8 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 2000
-number_entries = 1000
+number_simulations = 2500
+number_entries = 50
 year = 2019
 gender = "mens"
 # Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
