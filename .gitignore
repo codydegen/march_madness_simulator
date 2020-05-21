@@ -2,7 +2,6 @@
 
 # Database and extraneous jsons (too large)
 db/backups/
-# mens2019.db
 web_scraper/*/top_level_results/*
 # web_scraper/*/bracket_level_results/*
 
@@ -11,7 +10,8 @@ test_files/
 
 # Extraneous animation files for documentation
 *.stg
-*.gif
+assets/other
+
 
 # Created by https://www.gitignore.io/api/python,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=python,visualstudiocode

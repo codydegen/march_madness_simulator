@@ -20,11 +20,20 @@ from plotly.colors import n_colors
 import os
 import json
 
+######################### CHANGE THESE PARAMETERS #############################
+number_simulations = 2000
+number_entries = 1000
+year = 2019
+gender = "mens"
+# Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
+scoring_system = "ESPN"
+
 external_stylesheets = ['../assets/styles.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 app.title='March Madness Simulator'
+
 # Helper function
 # TODO There may be a more effective way of doing this in pandas 
 def get_array_from_dataframe(frame, array_type, data_type):
@@ -282,11 +291,8 @@ def create_bracket():
 ###############################################################################
 ################################ Global code ##################################
 ###############################################################################
-number_simulations = 3000
-number_entries = 50
-year = 2019
-gender = "mens"
-m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys="ESPN", year=year)
+
+m = model.Model(number_simulations=number_simulations, gender=gender, scoring_sys=scoring_system, year=year)
 m.batch_simulate()
 print("sims done")
 m.create_json_files()
