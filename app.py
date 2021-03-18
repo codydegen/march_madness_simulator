@@ -398,7 +398,7 @@ figures = [
                                 discrete_background_color_bins(df(data=table_data), columns=table_columns_places, dark_color='Greens')+
                                 [{
                                     'if': {
-                                        'filter_query': '{Index} < 4',  # matching rows of a hidden column with the id, `id`
+                                        'filter_query': '{Index} < 0',  # matching rows of a hidden column with the id, `id`
                                         'column_id': 'Entry'
                                     },
                                     'backgroundColor': 'rgb(255,248,220)'
