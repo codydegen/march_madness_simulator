@@ -21,8 +21,9 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 5000
-number_entries = 111
+number_simulations = 2000
+number_entries = 71
+fake_entries = 60
 year = 2021
 gender = "mens"
 # Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
@@ -299,8 +300,8 @@ m.create_json_files()
 m.update_entry_picks()
 m.initialize_special_entries()
 m.analyze_special_entries()
-m.add_fake_entries(100)
-m.add_bulk_entries_from_database(number_entries-100)
+m.add_fake_entries(fake_entries)
+m.add_bulk_entries_from_database(number_entries-fake_entries)
 m.add_simulation_results_postprocessing()
 m.raw_print()
 all_results = m.output_results()
