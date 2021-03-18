@@ -21,7 +21,7 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 2000
+number_simulations = 1000
 number_entries = 71
 fake_entries = 60
 year = 2021
