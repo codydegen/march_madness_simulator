@@ -21,7 +21,7 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 10000
+number_simulations = 5000
 number_entries = 111
 year = 2021
 gender = "mens"
