@@ -4,6 +4,16 @@ import web_scrape_to_json as ds
 PROXY = "156.96.118.58:3128"
 PROXY = "52.179.231.206:80"
 
+cody_2021 = {
+  "groupname": "Cody's Bracket",
+  "savepath": "cody_2021",
+  "webaddress": "https://fantasy.espn.com/tournament-challenge-bracket/2021/en/group?groupID=4144911",
+  "groupsize": "1+",
+  "year": 2021,
+  "prefix" : "cd",
+  "gender" : "mens"
+}
+
 tournamentChallenge_2019 = {
   "groupname": "Tournament Challenge",
   "savepath": "Tournament_challenge_2019",
@@ -71,4 +81,4 @@ wnbaStars_2019 = {
 
 
 b = ds.BracketScrape()
-b.pass_to_consolidated(PROXY, sheaSerrano_2019)
+b.pass_to_consolidated(PROXY, cody_2021)

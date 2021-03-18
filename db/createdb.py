@@ -105,7 +105,7 @@ def main(database):
     create_table(conn, sql_create_teams_table)
     create_table(conn, sql_create_entries_table)
     create_table(conn, sql_create_groups_table)
-    create_table(conn, sql_create_group_entries_table)If
+    create_table(conn, sql_create_group_entries_table)
     create_table(conn, sql_create_users_table)
     create_table(conn, sql_create_user_entries_table)
     print("Database created!")
@@ -113,4 +113,4 @@ def main(database):
     print("Error! cannot create the database connection.")
  
 if __name__ == '__main__':
-  main("db/test_db.db")
+  main("db/mens2021.db")

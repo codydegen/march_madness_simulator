@@ -7,19 +7,22 @@ import requests
 import os
 import re
 
-def fetch_who_picked_data(year, gender):
-
-  espn_data = {
-    "mens" : {
-      2019 : "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom",
-      2018 : "https://web.archive.org/web/20190307213746/http://fantasy.espn.com/tournament-challenge-bracket/2018/en/whopickedwhom"
-    },
-    "womens" : {
-      2019 : "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/whopickedwhom",
-      2018 : "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom"
-    }
+espn_data = {
+  "mens" : {
+    2021 : "https://fantasy.espn.com/tournament-challenge-bracket/2021/en/whopickedwhom",
+    2019 : "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom",
+    2018 : "https://web.archive.org/web/20190307213746/http://fantasy.espn.com/tournament-challenge-bracket/2018/en/whopickedwhom"
+  },
+  "womens" : {
+    2021 : "https://fantasy.espn.com/tournament-challenge-bracket-women/2021/en/whopickedwhom",
+    2019 : "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/whopickedwhom",
+    2018 : "https://web.archive.org/web/20190901044337/http://fantasy.espn.com/tournament-challenge-bracket-women/2018/en/whopickedwhom"
   }
-  url = espn_data[gender][year]
+}
+
+def fetch_who_picked_data(year, gender, url):
+  #todo code's all messed up
+  # url = espn_data[gender][year]
   #Create a handle, page, to handle the contents of the website
   page = requests.get(url)
   #Store the contents of the website under doc
@@ -78,7 +81,7 @@ def fetch_who_picked_data(year, gender):
   Dict={title:column for (title,column) in col}
   df=pd.DataFrame(Dict)
   df.head()
-  df.to_csv("../team_data/"+str(year)+"_"+gender+"_who_picked.csv", index=False)
+  df.to_csv("team_data/"+str(year)+"_"+gender+"_who_picked.csv", index=False)
 
 def fetch_fivethirtyeight_data(year, file):
   page = requests.get("https://projects.fivethirtyeight.com/march-madness-api/"+str(year)+"/fivethirtyeight_ncaa_forecasts.csv")
@@ -114,4 +117,4 @@ def check_if_data_exists(year, espn_data):
 
 
 
-check_if_data_exists(2019)
+check_if_data_exists(2021, espn_data)

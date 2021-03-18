@@ -27,7 +27,7 @@ The general workflow if downloading yourself for a data set with no data is belo
 
 
 1. Gather team data from 538 and ESPN 
-   * Run `check_ff_data_exists()` from who_picked_scrape.py in /web_scraper 
+   * Run `check_if_data_exists()` from who_picked_scrape.py in /web_scraper 
      * Output should be *\<year>_\<gender>_who_picked.csv* and *\<year>_fivethirtyeight_ncaa_forecasts.csv* in team_data folder.
    * Run `csv_combine(<year>)` from team_csv_combine.py in /team_data. 
      * Output should be *\<year>_all_prepped_data.csv*
@@ -43,7 +43,7 @@ The general workflow if downloading yourself for a data set with no data is belo
 3. Extract preliminary pick value data
    * Run `model.batch_simulate()` after creating a model with a nominal number of simulations (100-10000 is fine)
    * `model.create_json_files()` Will create *chalk.json*, *empty.json*, *reverse_lookup.json*, *preliminary_results.json*. 
-     * You must fill in the information missing (wins for play in teams that lost must be set to 0 in the chalk and empty files, Overall number one and two seeds in the chalk file Should be set to seven and six wins respectively. If you're doing a retrospective analysis and want to look at how things compared to the actual results, you need to fill out the actual.json file as well)
+     * You must fill in the information missing (wins for play in teams that lost must be set to 0 in the chalk and empty files, Overall number one and two seeds in the chalk file should be set to seven and six wins respectively. If you're doing a retrospective analysis and want to look at how things compared to the actual results, you need to fill out the actual.json file as well)
      * The *preliminary_results.json* file may have some issues if team abbreviations are inconsistent During bracket scraping.  For example, LSU/Louisiana State, Abilene Christian/ACU, etc.  You will need to duplicate dictionaries for each spelling to point to the right place.
 
 

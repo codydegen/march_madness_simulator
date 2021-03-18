@@ -20,6 +20,10 @@ import random
 # Final four pairings
 final_four_pairings = {
   "mens" : {
+    2021 : 
+      [['West', 'East'],
+      ['South', 'Midwest']]
+    ,
     2019 : 
       [['East', 'West'], 
       ['South', 'Midwest']]
@@ -29,6 +33,10 @@ final_four_pairings = {
     }
   },
   "womens" : {
+    2021 : 
+      [['Alamo, Hemisfair'],
+      ['River Walk', 'Mercado']]
+    ,
     2019 : 
       [["Greensboro", "Portland"],
       ["Chicago", "Albany"]]
@@ -124,7 +132,7 @@ seed_pairings = [[1,16],
                  [2,15]]
 
 class Model:
-  def __init__(self, gender='mens', year=2019, number_simulations=1, scoring_sys="ESPN"):
+  def __init__(self, gender='mens', year=2021, number_simulations=1, scoring_sys="degen_bracket"):
     self.gender = gender
     self.year = year 
     self.all_teams = self.create_teams()
@@ -157,6 +165,14 @@ class Model:
     self.simulations_won_by_imported_entries = []
     self.winning_scores_of_simulations = []
     pass
+
+  def raw_print(self):
+    for region in self.all_teams:
+      for seed in self.all_teams[region]:
+        for team in self.all_teams[region][seed]:
+          # print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
+          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
+
 
   def create_teams(self):
     current_path = os.path.dirname(__file__)
@@ -191,11 +207,12 @@ class Model:
         7:df["NCG_picked"][ind], 
       }
       team_name = df["team_name"][ind]
-      team_seed = df["team_seed"][ind]
+      team_seed = str(df["team_seed"][ind])
       # team seeds in the imported file have an a or B suffix for playin games, 
       # this strips that 
-      if len(team_seed) > 2:
-        team_seed = team_seed[0:2]
+      # todo uncomment this and repull all data once playins are played
+      # if len(team_seed) > 2:
+      #   team_seed = team_seed[0:2]
       team_region = df["team_region"][ind]
       team_rating = df["team_rating"][ind]
       team = Team(team_name, team_seed, team_region, team_rating, picks)
@@ -248,11 +265,21 @@ class Model:
       for seed in self.all_teams[region]:
         for team in self.all_teams[region][seed]:
           total_expected_points = 0
+          total_picked_expected_points = 0
+          total_points_diff = 0
           for ep in team.expected_points:
             round_expected_points = float(team.wins[ep]) / float(self.number_simulations) * float(self.scoring_system["round"][ep])
+            picked_round_expected_points = float(team.picked_frequency[ep].strip('%'))/100 * float(self.scoring_system["round"][ep])
+            round_points_diff = round_expected_points - picked_round_expected_points
             team.expected_points[ep] = round_expected_points
+            team.picked_expected_points[ep] = picked_round_expected_points
+            team.points_diff[ep] = round_points_diff
             total_expected_points += round_expected_points
+            total_picked_expected_points += picked_round_expected_points
+            total_points_diff += round_points_diff
           team.total_expected_points = total_expected_points
+          team.total_picked_expected_points = total_picked_expected_points
+          team.total_points_diff = total_points_diff
     pass
 
   def output_most_valuable_bracket(self):
@@ -261,6 +288,13 @@ class Model:
     most_valuable_bracket = Bracket(self)
     self.postprocess_bracket(most_valuable_bracket, "expected_points")
     return most_valuable_bracket
+
+  def output_random_bracket(self):
+    # TODO this can be exported into JSON format without going into the intermediate bracket step
+    # self.calculate_expected_points()
+    random_bracket = Bracket(self)
+    self.postprocess_bracket(random_bracket, "randomized")
+    return random_bracket
 
   def output_most_popular_bracket(self):
     # TODO this can be exported into JSON format without going into the intermediate bracket step
@@ -298,6 +332,7 @@ class Model:
     # Most valuable bracket, most popular bracket, chalk bracket
     most_valuable_bracket = self.output_most_valuable_bracket()
     most_popular_bracket = self.output_most_popular_bracket()
+    # random_bracket = self.output_random_bracket()
     current_path = os.path.dirname(__file__)
     chalk_data = r'../web_scraper/'+self.gender+str(self.year)+r'/chalk.json'
     chalk_team_data = os.path.join(current_path, chalk_data)
@@ -311,6 +346,7 @@ class Model:
     }
     mvb_source = self.sim_bracket.export_bracket_to_json(most_valuable_bracket.bracket.root, "most valuable bracket")
     mpb_source = self.sim_bracket.export_bracket_to_json(most_popular_bracket.bracket.root, "most popular bracket")
+    # random_bracket = self.sim_bracket.export_bracket_to_json(random_bracket.bracket.root, "random bracket")
     self.special_entries["most_valuable_teams"] = Entry(model=self, source=mvb_source, method="json")
     self.special_entries["most_popular_teams"] = Entry(model=self, source=mpb_source, method="json")
     self.special_entries["chalk"] = Entry(model=self, source=json.dumps(chalk_entry), method="json")
@@ -378,6 +414,13 @@ class Model:
     self.entries["imported_entries"].append(entry)
     self.update_imported_entry_score(entry)
     # self.
+
+  def add_fake_entries(self, number_entries):
+    for i in range(number_entries):
+      random_bracket = self.output_random_bracket()
+      random_bracket = self.sim_bracket.export_bracket_to_json(random_bracket.bracket.root, "random bracket no."+str(i+1),entryID=i+1)
+      self.add_entry(Entry(model=self, source=random_bracket, method="json"))
+    pass
 
 # TODO Make this incremental potentially
   def add_bulk_entries_from_database(self, number_entries):
@@ -713,7 +756,7 @@ class Bracket:
 # in a small for loop, And then create each individual region recursively.
   def create_bracket(self):
     finals = NodeGame(region="Finals", model=self.model)
-    for ff_pairings in final_four_pairings[self.model.gender][self.model.year]:
+    for ff_pairings in final_four_pairings[self.model.gender][int(self.model.year)]:
       finals.add_child(self.add_semis(ff_pairings))
     return finals
   
@@ -780,7 +823,7 @@ class Bracket:
       node.team_two = team
 
 
-  def export_bracket_to_json(self, bracket, name):
+  def export_bracket_to_json(self, bracket, name, entryID=None):
     game_list = queue.SimpleQueue()
     results_list = {}
     for region in self.model.all_teams:
@@ -810,7 +853,7 @@ class Bracket:
     results["team_picks"] = results_list
     results["name"] = name
     results["method"] = "json"
-    results["entryID"] = None
+    results["entryID"] = entryID
     results["source"] = None
     # Hooking up entry IDs to special brackets to make them easier to find 
     # later for Dash postprocessing
@@ -833,7 +876,7 @@ class Team:
     self.name = name
     self.seed = seed
     self.region = region
-    self.elo = elo
+    self.elo = float(elo)
     self.picked_frequency = picked_frequency
 
     self.wins = {
@@ -856,9 +899,34 @@ class Team:
       6:0, 
       7:0, 
     }
+
+    self.picked_expected_points = {
+      # round number is key, value is picked_frequency * point value
+      1:0, 
+      2:0, 
+      3:0, 
+      4:0, 
+      5:0, 
+      6:0, 
+      7:0, 
+    }
+
+    self.points_diff = {
+      # round number is key, value is expected points - picked expected points -> high value = "underpicked" teams
+      1:0, 
+      2:0, 
+      3:0, 
+      4:0, 
+      5:0, 
+      6:0, 
+      7:0, 
+    }
+
     self.simulation_results = []
     self.temp_result = 0
     self.total_expected_points = 0
+    self.total_picked_expected_points = 0
+    self.total_points_diff = 0
     self.entry_picks = {
       "imported_entries" : [],
       "actual_results" : 0,
@@ -891,7 +959,11 @@ class Team:
         "picked_frequency" : self.picked_frequency,
         "wins" : self.wins,
         "expected_points" : self.expected_points,
+        "picked_expected_points": self.picked_expected_points,
+        "points_diff": self.points_diff,
         "total_expected_points" : self.total_expected_points,
+        "total_picked_expected_points": self.total_picked_expected_points,
+        "total_points_diff": self.total_points_diff,
       }
       if array:
         export_data = [export_data]
@@ -1023,19 +1095,37 @@ class NodeGame(Game, NodeMixin):
   def postprocess_pick_team(self, criteria):
     # between two teams in a matchup, pick the team with more of the given 
     # criteria. Used to visualize results
-    if getattr(self.team_one, criteria)[self.round_num] > getattr(self.team_two, criteria)[self.round_num]:
-      self.update_bracket(self.team_one)
-    elif getattr(self.team_one, criteria)[self.round_num] < getattr(self.team_two, criteria)[self.round_num]:
-      self.update_bracket(self.team_two)
-    else:
-      # If the criteria is exactly the same than just pick a random team.
-      # Normally only happens when the criteria is so close to zero that it 
-      # gets rounded (like a late-round matchup between big underdogs) 
-      # So not to impactful overall
-      if random.random() < 0.5:
+    
+    if criteria == "randomized":
+      total_perc = float(self.team_one.picked_frequency[self.round_num].strip('%')) + float(self.team_two.picked_frequency[self.round_num].strip('%'))
+      chance = random.random()
+      comp_one = float(getattr(self.team_one, 'picked_frequency')[self.round_num].strip('%'))
+      comp_two = float(getattr(self.team_two, 'picked_frequency')[self.round_num].strip('%'))
+      if chance < comp_one / total_perc or (chance == comp_one / total_perc and random.random() < 0.5):
         self.update_bracket(self.team_one)
       else:
         self.update_bracket(self.team_two)
+      pass
+    else:
+      if type(getattr(self.team_one, criteria)[self.round_num]) is str:
+        comp_one = float(getattr(self.team_one, criteria)[self.round_num].strip('%'))
+        comp_two = float(getattr(self.team_two, criteria)[self.round_num].strip('%'))
+      else:
+        comp_one = getattr(self.team_one, criteria)[self.round_num]
+        comp_two = getattr(self.team_two, criteria)[self.round_num]
+      if comp_one > comp_two:
+        self.update_bracket(self.team_one)
+      elif comp_one < comp_two:
+        self.update_bracket(self.team_two)
+      else:
+        # If the criteria is exactly the same than just pick a random team.
+        # Normally only happens when the criteria is so close to zero that it 
+        # gets rounded (like a late-round matchup between big underdogs) 
+        # So not too impactful overall
+        if random.random() < 0.5:
+          self.update_bracket(self.team_one)
+        else:
+          self.update_bracket(self.team_two)
     
 # Object used for a given entry, whether that be filled out bracket or a 
 # bracket using postprocessed data.  In hindsight would it have been better to
@@ -1101,7 +1191,7 @@ class Entry:
           i += 1
     return team_picks
 
-# The simulation results class. Contains results for each Entry filled out as 
+# The simulation results class contains results for each entry filled out as 
 # well as information pertaining to the winners and any special brackets 
 # filled out.
 class Simulation_results:
@@ -1271,15 +1361,25 @@ class Simulation_results:
 
 def main():
   print("test")
-  # model = Model(number_simulations=100, scoring_sys="ESPN", gender="mens")
-  # model.batch_simulate()
-  # model.create_json_files()
-  # model.update_entry_picks()
-  # model.initialize_special_entries()
-  # model.analyze_special_entries()
-  # model.add_bulk_entries_from_database(15)
-  # model.add_simulation_results_postprocessing()
-  # model.output_results()
+  model = Model(number_simulations=100, scoring_sys="degen_bracket", gender="mens", year=2021)
+  model.batch_simulate()
+  model.create_json_files()
+  model.update_entry_picks()
+  model.initialize_special_entries()
+  model.analyze_special_entries()
+  model.add_fake_entries(50)
+  model.add_bulk_entries_from_database(12)
+  model.add_simulation_results_postprocessing()
+  model.output_results()
+
+  print("yes")
+  model.raw_print()
+  # print("Name, Region, Seed, Total Expected Points, Total Picked Expected Points, Points Differential (Positive = Underrated)")
+  # for region in model.all_teams:
+  #   for seed in model.all_teams[region]:
+  #     for team in model.all_teams[region][seed]:
+  #       print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
+
   pass
 
 if __name__ == '__main__':

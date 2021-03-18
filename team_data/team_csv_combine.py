@@ -15,14 +15,16 @@ def csv_combine(year):
   who_picked_path_women = str(year)+"_womens_who_picked.csv"
   current_path = os.path.dirname(__file__)
   forecast_file = os.path.join(current_path, forecast_path)
+  wpm = os.path.join(current_path, who_picked_path_men)
+  wpw = os.path.join(current_path, who_picked_path_women)
   if os.path.exists(forecast_file):
     pass
   else:
     pass
     # print(" path doesn't exist")
   forecast = pd.read_csv(forecast_file)
-  who_picked_men = pd.read_csv(who_picked_path_men)
-  who_picked_women = pd.read_csv(who_picked_path_women)
+  who_picked_men = pd.read_csv(wpm)
+  who_picked_women = pd.read_csv(wpw)
   j = 0
   r64 = []
   r32 = []
@@ -59,6 +61,7 @@ def csv_combine(year):
         print(" missing seed")
       
       if forecast.iloc[i]["gender"] == "mens":
+        # err here means missing name
         new_name = name_fix(forecast[(forecast["team_seed"] == new_seed) & (forecast["team_region"] == region) & (forecast["gender"] == "mens")]["team_name"].values[0],"men",year)
         subset = who_picked_men.loc[who_picked_men["team_name"] == new_name]
       elif forecast.iloc[i]["gender"] == "womens":
@@ -105,6 +108,13 @@ def csv_combine(year):
 
 def name_fix(name, gender, year):
   swapper = {
+    #538 : who picked
+    # "North Carolina A&T": "NC A&T",
+    "Appalachian State": "APP",
+    "Eastern Washington": "E Washington",
+    "UC-Santa Barbara": "UCSB",
+    "Michigan State": "MSU",
+    "Middle Tennessee": "Middle Tenn",
     "Louisiana State": "LSU",
     "Florida State": "Florida St",
     "Central Florida": "UCF",
@@ -131,6 +141,7 @@ def name_fix(name, gender, year):
     "Arkansas-Little Rock": "Little Rock",
     "Bethune-Cookman": "BethuneCookman",
     "Central Michigan": "CMU",
+    "Cent Michigan": "CMU",
     "UC-Davis": "UC Davis",
     "Loyola (IL)": "LoyolaChicago",
     "Texas A&M": "Texas A&M;",
@@ -147,16 +158,44 @@ def name_fix(name, gender, year):
     "Saint Francis (PA)": "St Francis (PA)",
     "South Florida": "USF",
     "California": "Cal",
-    "North Carolina A&T": "NC A&T;",
+    "North Carolina A&T": "NC A&T",
     "Cal State Northridge": "CSU Northridge",
     "George Washington": "G Washington",
     "Western Kentucky": "W Kentucky",
     "Northern Colorado": "N Colorado",
     "Nicholls State": "Nicholls",
+    "Southern California": "USC",
+    "Norfolk State": "NORF",
+    "Texas Southern": "TXSO",
+    "Mount St. Mary's": "MSM",
+    # "Mt. St. Mary's": "MSM",
+    "Drake": "DRKE",
+    "Washington State": "Washington St",
+    # "LoyolaChicago": "Loyola Chicago",
     
     # "Mississippi State": ,
   }
   if name in swapper:
+    if name == "Mount St. Mary's":
+      if gender == "womens":
+        return "Mt. St. Mary's"
+      else:
+        return "MSM"
+    # if name == "Central Michigan":
+    #   if year == 2021:
+    #     return "Cent Michigan"
+    #   else:
+    #     return "CMU"
+    if name == "North Carolina-Greensboro":
+      if year == 2021:
+        return "UNC Greensboro"
+      else:
+        return "UNCG"
+    if name == "Loyola (IL)":
+      if year == 2021:
+        return "Loyola Chicago"
+      else:
+        return "LoyolaChicago"
     if name == "Mississippi State": 
       if gender == "mens":
         return "Mississippi St"
@@ -176,7 +215,7 @@ def name_fix(name, gender, year):
       else:
         return "NMSU"
     if name == "Central Michigan":
-      if year == 2018:
+      if year == 2018 or year == 2021:
         return "Cent Michigan"
       else:
         return "CMU"
@@ -186,7 +225,7 @@ def name_fix(name, gender, year):
       else:
         return "Florida St"
     if name == "South Dakota State":
-      if year == 2018:
+      if year == 2018 or year == 2021:
         return "South Dakota St"
       else:
         return "SDST"
@@ -194,4 +233,4 @@ def name_fix(name, gender, year):
   else:
     return name
 
-csv_combine(2019)
+csv_combine(2021)

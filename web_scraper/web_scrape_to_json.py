@@ -168,10 +168,10 @@ class BracketScrape:
     }
     # driver = webdriver.Chrome()
     # driver.get(dataset["webaddress"])
-    path_open = dataset["gender"]+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
+    path_open = "web_scraper/"+dataset["gender"]+str(dataset["year"])+"/top_level_results/"+dataset["savepath"]+"/"
     # path_open = "scraped_brackets/"+str(dataset["year"])+"/top_level_results/test/"
 
-    path_consolidated = dataset["gender"]+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
+    path_consolidated = "web_scraper/"+dataset["gender"]+str(dataset["year"])+"/bracket_results/"+dataset["prefix"]+"_"
     open_file = open(path_consolidated+"consolidated.json", "a")
     c = {}
     for filename in os.listdir(path_open):
@@ -219,7 +219,7 @@ class BracketScrape:
     for key in d:
       if len(d[key]["team_picks"]) == 0:
         team_picks = json.loads(json.dumps(eb))
-        page = requests.get("http://fantasy.espn.com/tournament-challenge-bracket/2019/en/entry?entryID="+key)
+        page = requests.get("http://fantasy.espn.com/tournament-challenge-bracket/2021/en/entry?entryID="+key)
         # print(page.text)
         soup = BeautifulSoup(page.content, 'html.parser')
         c = soup.select(".selectedToAdvance")
@@ -231,7 +231,7 @@ class BracketScrape:
               break
           region = reverse_bracket[team]["region"]
           seed = reverse_bracket[team]["seed"]
-          # I have to add this one because this is the easiest way to fix issues with multiple demons being used for the same team i.e. VCU versus Virginia Commonwealth
+          # I have to add this one because this is the easiest way to fix issues with multiple names being used for the same team i.e. VCU versus Virginia Commonwealth
           team = reverse_bracket[team]["team"]
           if(team_picks[region][seed][team] < 7):
             team_picks[region][seed][team] += 1

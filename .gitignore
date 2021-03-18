@@ -7,7 +7,8 @@ web_scraper/*/bracket_results/*
 
 # testing files
 test_files/
-
+htmlbrackets/
+hide/
 # Extraneous animation files for documentation
 *.stg
 assets/other

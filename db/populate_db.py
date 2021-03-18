@@ -7,6 +7,68 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import time
 
+import requests
+import os, sys
+
+if sys.version_info.major < 3:
+    from urllib import url2pathname
+else:
+    from urllib.request import url2pathname
+
+class LocalFileAdapter(requests.adapters.BaseAdapter):
+    """Protocol Adapter to allow Requests to GET file:// URLs
+
+    @todo: Properly handle non-empty hostname portions.
+    """
+
+    @staticmethod
+    def _chkpath(method, path):
+        """Return an HTTP status for the given filesystem path."""
+        if method.lower() in ('put', 'delete'):
+            return 501, "Not Implemented"  # TODO
+        elif method.lower() not in ('get', 'head'):
+            return 405, "Method Not Allowed"
+        elif os.path.isdir(path):
+            return 400, "Path Not A File"
+        elif not os.path.isfile(path):
+            return 404, "File Not Found"
+        elif not os.access(path, os.R_OK):
+            return 403, "Access Denied"
+        else:
+            return 200, "OK"
+
+    def send(self, req, **kwargs):  # pylint: disable=unused-argument
+        """Return the file specified by the given request
+
+        @type req: C{PreparedRequest}
+        @todo: Should I bother filling `response.headers` and processing
+               If-Modified-Since and friends using `os.stat`?
+        """
+        path = os.path.normcase(os.path.normpath(url2pathname(req.path_url)))
+        response = requests.Response()
+
+        response.status_code, response.reason = self._chkpath(req.method, path)
+        if response.status_code == 200 and req.method.lower() != 'head':
+            try:
+                response.raw = open(path, 'rb')
+            except (OSError, IOError) as err:
+                response.status_code = 500
+                response.reason = str(err)
+
+        if isinstance(req.url, bytes):
+            response.url = req.url.decode('utf-8')
+        else:
+            response.url = req.url
+
+        response.request = req
+        response.connection = self
+
+        return response
+
+    def close(self):
+        pass
+
+
 def populate_teams_table(db, teams):
   # Add teams table
   columns = ["name", "region", "seed", "elo", "pick_rate_1", "pick_rate_2", "pick_rate_3", "pick_rate_4", "pick_rate_5", "pick_rate_6", "pick_rate_7"]
@@ -50,8 +112,8 @@ def add_entries_to_database(db, entry, entries):
 def scrape_data_for_entries(db, ip_addresses, gender):
   # take key from database
   current_path = os.path.dirname(__file__)
-  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\womens2019\\empty.json"), "r")
-  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\womens2019\\reverse_lookup.json"), "r")
+  empty_bracket_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2021\\empty.json"), "r")
+  reverse_lookup_file = open(os.path.join(current_path, r"..\\web_scraper\\mens2021\\reverse_lookup.json"), "r")
   reverse_bracket = json.load(reverse_lookup_file)
   empty_bracket = json.load(empty_bracket_file)
 
@@ -59,18 +121,27 @@ def scrape_data_for_entries(db, ip_addresses, gender):
   with db:
     current = db.cursor()
     select_table_query = ''' SELECT *  FROM entries 
-                             WHERE name = 'NULL' AND entries.espn_score <> 0;'''
+                             WHERE name = 'NULL' AND entries.espn_score = 0;'''
     current.execute(select_table_query)
     valid_keys = current.fetchall()
   # establish a proxy
   for key in valid_keys:
-    url = "http://fantasy.espn.com/tournament-challenge-bracket-women/2019/en/entry?entryID="+str(key[0])
-    if True:
+    # url = "https://fantasy.espn.com/tournament-challenge-bracket/2021/en/entry?entryID="+str(key[0])
+    url = "file:///C:/Users/Cody/Documents/Repo/march_madness_simulator/tc"+str(key[0])+".html"
+    requests_session = requests.session()
+    requests_session.mount('file://', LocalFileAdapter())
+    page = requests_session.get('file:///C:/Users/Cody/Documents/Repo/march_madness_simulator/htmlbrackets/tc'+str(key[0])+'.html')
+    if page.status_code != 404:
       proxy_index = random.randint(0, len(ip_addresses) - 1)
       proxies = {"http": ip_addresses[proxy_index], 
               "https": ip_addresses[proxy_index]}
 
-      page = requests.get(url, proxies=proxies)
+      # page = requests.get(url)
+      
+      page = requests_session.get('file:///C:/Users/Cody/Documents/Repo/march_madness_simulator/htmlbrackets/tc'+str(key[0])+'.html')
+
+      # page = requests.get(url, proxies=proxies)
+
       soup = BeautifulSoup(page.content, 'html.parser')
       entry_id = key[0]
       user_picked_teams = soup.select(".selectedToAdvance")
@@ -84,8 +155,8 @@ def scrape_data_for_entries(db, ip_addresses, gender):
         update_entry_with_entry_name_and_predicted_scores(db, key, entry_name, predicted_score_winner, predicted_score_loser, wins_array, gender)
         user_id = add_user_to_database(db, username)
         user_entry_id = add_user_entries_to_database(db, user_id, key)
-        add_other_user_brackets_to_database(db)
-        add_groups_and_group_entries_to_database(db, user_groups, entry_id)
+        # add_other_user_brackets_to_database(db)
+        # add_groups_and_group_entries_to_database(db, user_groups, entry_id)
         db.commit()
         print("\n\ndata updated for entry "+str(entry_id))
       else:
@@ -249,6 +320,7 @@ def get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_
         team = child.attrs["title"]
         break
     region = reverse_bracket[team]["region"]
+    # error here means you have to add an entry to the reverse lookup with the missing team names
     seed = reverse_bracket[team]["seed"]
     # I have to add this one because this is the easiest way to fix issues with multiple names being used for the same team i.e. VCU versus Virginia Commonwealth
     team = reverse_bracket[team]["team"]
@@ -268,8 +340,8 @@ def get_wins_array(db, user_picked_teams, empty_bracket, reverse_bracket, entry_
 
 
 def main(gender):
-  team_data = r'..\\web_scraper\\womens2019\\preliminary_results.json'
-  entries_data = r'..\\web_scraper\\womens2019\\bracket_results\\bs_consolidated.json'
+  team_data = r'..\\web_scraper\\mens2021\\preliminary_results.json'
+  entries_data = r'..\\web_scraper\\mens2021\\bracket_results\\cd_consolidated.json'
   
 
   current_path = os.path.dirname(__file__)
@@ -279,14 +351,14 @@ def main(gender):
   teams = json.load(open(new_team_data, "r"))
   entries = json.load(open(new_entries_data, "r"))
 
-  database_string = r"..\\db\\womens2019.db"
+  database_string = r"db\\mens2021.db"
   db = sqlite3.connect(database_string)
 
   # Add only if teams haven't been added
   # populate_teams_table(db, teams)
   # Add only if groups haven't been added
-  # add_group_to_database(db, 30053, "WNBA Stars")
-  # populate_entries_table(db, entries, 30053)
+  # add_group_to_database(db, 4144911, "just me")
+  populate_entries_table(db, entries, 4144911)
 
   ip_addresses = ["52.179.231.206:80", 
                   "68.188.59.198:80",
@@ -314,4 +386,7 @@ def main(gender):
   scrape_data_for_entries(db, ip_addresses, gender)
   
 if __name__ == '__main__':
-    main("womens")
+    main("mens")
+
+
+
