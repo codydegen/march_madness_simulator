@@ -117,6 +117,29 @@ scoring_systems = {
       6 : 31,
       7 : 52,
       },
+  },
+
+    "pick_six" : {
+    "round" : {
+      0 : 0,
+      1 : 0,
+      2 : 1,
+      3 : 1,
+      4 : 1,
+      5 : 1,
+      6 : 1,
+      7 : 7,
+    },
+    "cumulative" : {
+      0 : 0,
+      1 : 0,
+      2 : 1,
+      3 : 2,
+      4 : 3,
+      5 : 4,
+      6 : 5,
+      7 : 12,
+      },
   }
 }
 
@@ -171,7 +194,8 @@ class Model:
       for seed in self.all_teams[region]:
         for team in self.all_teams[region][seed]:
           # print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
-          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
+          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff)+", "+str(team.wins))
+
 
 
   def create_teams(self):
@@ -1361,14 +1385,14 @@ class Simulation_results:
 
 def main():
   print("test")
-  model = Model(number_simulations=100, scoring_sys="degen_bracket", gender="mens", year=2021)
+  model = Model(number_simulations=10000, scoring_sys="pick_six", gender="mens", year=2021)
   model.batch_simulate()
   model.create_json_files()
   model.update_entry_picks()
   model.initialize_special_entries()
   model.analyze_special_entries()
-  model.add_fake_entries(50)
-  model.add_bulk_entries_from_database(12)
+  # model.add_fake_entries()
+  model.add_bulk_entries_from_database(2)
   model.add_simulation_results_postprocessing()
   model.output_results()
 

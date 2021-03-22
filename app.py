@@ -21,9 +21,10 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 1000
-number_entries = 71
-fake_entries = 60
+number_simulations = 10000
+real_entries = 11
+fake_entries = 500
+number_entries = real_entries + fake_entries
 year = 2021
 gender = "mens"
 # Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
@@ -301,7 +302,7 @@ m.update_entry_picks()
 m.initialize_special_entries()
 m.analyze_special_entries()
 m.add_fake_entries(fake_entries)
-m.add_bulk_entries_from_database(number_entries-fake_entries)
+m.add_bulk_entries_from_database(real_entries)
 m.add_simulation_results_postprocessing()
 m.raw_print()
 all_results = m.output_results()
@@ -601,7 +602,7 @@ def update_dropdown(data, entryID, json_filtered_dataframe):
     ranks_figure = prepare_ranks_graph(filtered_results)
 
     winning_score_figure = prepare_scores_graph(filtered_results)
-    m.raw_print()
+    # m.raw_print()
     return dropdown_options,ranks_figure, winning_score_figure
 
 if __name__ == '__main__':
