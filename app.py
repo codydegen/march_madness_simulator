@@ -21,14 +21,14 @@ import os
 import json
 
 ######################### CHANGE THESE PARAMETERS #############################
-number_simulations = 10000
+number_simulations = 1000
 real_entries = 11
-fake_entries = 500
+fake_entries = 50
 number_entries = real_entries + fake_entries
-year = 2021
+year = 2019
 gender = "mens"
 # Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
-scoring_system = "degen_bracket"
+scoring_system = "ESPN"
 
 external_stylesheets = ['../assets/styles.css']
 
