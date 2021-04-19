@@ -379,7 +379,8 @@ figures = [
     'Select entries in the table to visualize the picks, or see how they stack'+
     ' up by placement or by raw score.  If you\'d like to see the results for'+
     ' a small group of entries or simulations, scroll to the bottom and you '+
-    'can see how things might change.]),
+    'can see how things might change.'+
+    '']),
     dt.DataTable(
         id="scoring-table",
         columns=[{"name": i, "id": i} for i in table_columns_pre]+ 
