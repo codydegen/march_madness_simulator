@@ -264,7 +264,7 @@ class Model:
     self.sim_bracket.reset_bracket()
     pass
 
-# simulation methods
+  # simulation methods
   def batch_simulate(self):
     for i in range(0, self.number_simulations):
       self.sim_bracket.simulate_bracket()
@@ -446,7 +446,7 @@ class Model:
       self.add_entry(Entry(model=self, source=random_bracket, method="json"))
     pass
 
-# TODO Make this incremental potentially
+  # TODO Make this incremental potentially
   def add_bulk_entries_from_database(self, number_entries):
     current_path = os.path.dirname(__file__)
     database = r"../db/"+self.gender+str(self.year)+".db"
@@ -493,11 +493,11 @@ class Model:
             entry.scores["simulations"][i] += self.scoring_system["cumulative"][min(team.simulation_results[i], team.entry_picks["imported_entries"][entry.index])]
           entry.scores["actual_results"] += self.scoring_system["cumulative"][min(team.entry_picks["actual_results"], team.entry_picks["imported_entries"][entry.index])]
 
-# Output is a data frame which has the simulation results for each entry as well
-# as the special entries
-# Todo The general structuring of outputting of results, especially the sorting
-# of ranks is pretty inefficient. This would be a potential place to really 
-# improve the efficiency of the program.
+  # Output is a data frame which has the simulation results for each entry as well
+  # as the special entries
+  # Todo The general structuring of outputting of results, especially the sorting
+  # of ranks is pretty inefficient. This would be a potential place to really 
+  # improve the efficiency of the program.
   def output_results(self, entries=None, sims=None):
     # output_results is used both For initial rankings and also for further 
     # postprocessing of subsets. Initial rankings are already ranked and so I 
@@ -692,8 +692,8 @@ class Model:
   def get_special_wins(self):
     return self.simulations_won_by_special_entries
 
-# Helper functions for creating json files necessary.  Shouldn't be used except
-# when preparing another year's data.
+  # Helper functions for creating json files necessary.  Shouldn't be used except
+  # when preparing another year's data.
   def create_json_files(self):
     current_path = os.path.dirname(__file__)
     json_connector = r"../web_scraper/"+self.gender+str(self.year)+r"/"
@@ -745,7 +745,7 @@ class Model:
     print(entries, sims)
     return self.output_results(entries, sims)
 
-# Get entry and return it based on entry ID
+  # Get entry and return it based on entry ID
   def get_entry(self, entryID):
     if entryID > 0:
       for entry in self.entries['imported_entries']:
@@ -1215,8 +1215,8 @@ class Entry:
           i += 1
     return team_picks
 
-# The simulation results class contains results for each entry filled out as 
-# well as information pertaining to the winners and any special brackets 
+# The simulation results class contains results for each simulation completed 
+# as well as information pertaining to the winners and any special brackets 
 # filled out.
 class Simulation_results:
   def __init__(self, model, actual=False, index=-1):

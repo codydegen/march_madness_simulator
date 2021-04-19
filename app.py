@@ -23,7 +23,7 @@ import json
 ######################### CHANGE THESE PARAMETERS #############################
 number_simulations = 500
 real_entries = 10
-fake_entries = 10
+fake_entries = 50
 number_entries = real_entries + fake_entries
 year = 2021
 gender = "mens"
@@ -301,7 +301,7 @@ m.create_json_files()
 m.update_entry_picks()
 m.initialize_special_entries()
 m.analyze_special_entries()
-# m.add_fake_entries(fake_entries)
+m.add_fake_entries(fake_entries)
 m.add_bulk_entries_from_database(real_entries)
 m.add_simulation_results_postprocessing()
 m.raw_print()
