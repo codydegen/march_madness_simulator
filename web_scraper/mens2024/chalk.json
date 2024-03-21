@@ -1,0 +1,202 @@
+{
+    "East": {
+        "1": {
+            "Connecticut": 7
+        },
+        "2": {
+            "Iowa State": 4
+        },
+        "4": {
+            "Auburn": 3
+        },
+        "3": {
+            "Illinois": 3
+        },
+        "7": {
+            "Washington State": 2
+        },
+        "6": {
+            "Brigham Young": 2
+        },
+        "5": {
+            "San Diego State": 2
+        },
+        "8": {
+            "Florida Atlantic": 2
+        },
+        "10": {
+            "Drake": 1
+        },
+        "11": {
+            "Duquesne": 1
+        },
+        "9": {
+            "Northwestern": 1
+        },
+        "12": {
+            "UAB": 1
+        },
+        "14": {
+            "Morehead State": 1
+        },
+        "13": {
+            "Yale": 1
+        },
+        "15": {
+            "South Dakota State": 1
+        },
+        "16": {
+            "Stetson": 1
+        }
+    },
+    "South": {
+        "1": {
+            "Houston": 6
+        },
+        "2": {
+            "Marquette": 4
+        },
+        "3": {
+            "Kentucky": 3
+        },
+        "5": {
+            "Wisconsin": 2
+        },
+        "6": {
+            "Texas Tech": 2
+        },
+        "4": {
+            "Duke": 3
+        },
+        "7": {
+            "Florida": 2
+        },
+        "9": {
+            "Texas A&M": 1
+        },
+        "10": {
+            "Colorado": 1
+        },
+        "12": {
+            "James Madison": 1
+        },
+        "11": {
+            "North Carolina State": 1
+        },
+        "8": {
+            "Nebraska": 2
+        },
+        "13": {
+            "Vermont": 1
+        },
+        "14": {
+            "Oakland": 1
+        },
+        "15": {
+            "Western Kentucky": 1
+        },
+        "16": {
+            "Longwood": 1
+        }
+    },
+    "West": {
+        "1": {
+            "North Carolina": 5
+        },
+        "2": {
+            "Arizona": 4
+        },
+        "3": {
+            "Baylor": 3
+        },
+        "4": {
+            "Alabama": 3
+        },
+        "7": {
+            "Dayton": 2
+        },
+        "6": {
+            "Clemson": 2
+        },
+        "5": {
+            "Saint Mary's": 2
+        },
+        "8": {
+            "Mississippi State": 2
+        },
+        "10": {
+            "Nevada": 1
+        },
+        "12": {
+            "Grand Canyon": 1
+        },
+        "11": {
+            "New Mexico": 1
+        },
+        "9": {
+            "Michigan State": 1
+        },
+        "13": {
+            "Charleston": 1
+        },
+        "14": {
+            "Colgate": 1
+        },
+        "15": {
+            "Long Beach State": 1
+        },
+        "16": {
+            "Wagner": 0
+        }
+    },
+    "Midwest": {
+        "1": {
+            "Purdue": 5
+        },
+        "2": {
+            "Tennessee": 4
+        },
+        "5": {
+            "Gonzaga": 2
+        },
+        "3": {
+            "Creighton": 3
+        },
+        "4": {
+            "Kansas": 3
+        },
+        "6": {
+            "South Carolina": 2
+        },
+        "7": {
+            "Texas": 2
+        },
+        "11": {
+            "Oregon": 1
+        },
+        "10": {
+            "Colorado State": 1
+        },
+        "8": {
+            "Utah State": 2
+        },
+        "9": {
+            "TCU": 1
+        },
+        "12": {
+            "McNeese State": 1
+        },
+        "13": {
+            "Samford": 1
+        },
+        "14": {
+            "Akron": 1
+        },
+        "15": {
+            "St. Peter's": 1
+        },
+        "16": {
+            "Grambling State": 1
+        }
+    }
+}

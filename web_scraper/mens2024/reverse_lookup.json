@@ -1,0 +1,893 @@
+{
+    "Duke": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "1": 1
+        },
+        "team": {
+            "Duke": 1
+        }
+    },
+    "Michigan State": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "2": 1
+        },
+        "team": {
+            "Michigan State": 1
+        }
+    },
+    "Virginia Tech": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "4": 1
+        },
+        "team": {
+            "Virginia Tech": 1
+        }
+    },
+    "Louisiana State": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "3": 1
+        },
+        "team": {
+            "Louisiana State": 1
+        }
+    },
+    "LSU": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "3": 1
+        },
+        "team": {
+            "Louisiana State": 1
+        }
+    },
+    "Louisville": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "7": 1
+        },
+        "team": {
+            "Louisville": 1
+        }
+    },
+    "Maryland": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "6": 1
+        },
+        "team": {
+            "Maryland": 1
+        }
+    },
+    "Mississippi State": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "5": 1
+        },
+        "team": {
+            "Mississippi State": 1
+        }
+    },
+    "Mississippi St": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "5": 1
+        },
+        "team": {
+            "Mississippi State": 1
+        }
+    },
+    "Virginia Commonwealth": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Virginia Commonwealth": 1
+        }
+    },
+    "VCU": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Virginia Commonwealth": 1
+        }
+    },
+    "Minnesota": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "10": 1
+        },
+        "team": {
+            "Minnesota": 1
+        }
+    },
+    "Belmont": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Belmont": 1
+        }
+    },
+    "Temple": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Temple": 1
+        }
+    },
+    "Central Florida": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "9": 1
+        },
+        "team": {
+            "Central Florida": 1
+        }
+    },
+    "UCF": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "9": 1
+        },
+        "team": {
+            "Central Florida": 1
+        }
+    },
+    "Liberty": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "12": 1
+        },
+        "team": {
+            "Liberty": 1
+        }
+    },
+    "Yale": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "14": 1
+        },
+        "team": {
+            "Yale": 1
+        }
+    },
+    "Saint Louis": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "13": 1
+        },
+        "team": {
+            "Saint Louis": 1
+        }
+    },
+    "Bradley": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "15": 1
+        },
+        "team": {
+            "Bradley": 1
+        }
+    },
+    "North Dakota State": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "North Dakota State": 1
+        }
+    },
+    "North Dakota St": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "North Dakota State": 1
+        }
+    },
+    "North Carolina Central": {
+        "region": {
+            "East": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "North Carolina Central": 1
+        }
+    },
+    "Virginia": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "1": 1
+        },
+        "team": {
+            "Virginia": 1
+        }
+    },
+    "Tennessee": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "2": 1
+        },
+        "team": {
+            "Tennessee": 1
+        }
+    },
+    "Purdue": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "3": 1
+        },
+        "team": {
+            "Purdue": 1
+        }
+    },
+    "Wisconsin": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "5": 1
+        },
+        "team": {
+            "Wisconsin": 1
+        }
+    },
+    "Villanova": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "6": 1
+        },
+        "team": {
+            "Villanova": 1
+        }
+    },
+    "Kansas State": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "4": 1
+        },
+        "team": {
+            "Kansas State": 1
+        }
+    },
+    "Cincinnati": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "7": 1
+        },
+        "team": {
+            "Cincinnati": 1
+        }
+    },
+    "Oklahoma": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "9": 1
+        },
+        "team": {
+            "Oklahoma": 1
+        }
+    },
+    "Iowa": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "10": 1
+        },
+        "team": {
+            "Iowa": 1
+        }
+    },
+    "Oregon": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "12": 1
+        },
+        "team": {
+            "Oregon": 1
+        }
+    },
+    "Saint Mary's": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Saint Mary's (CA)": 1
+        }
+    },
+    "Saint Mary's (CA)": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Saint Mary's (CA)": 1
+        }
+    },
+    "Mississippi": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Mississippi": 1
+        }
+    },
+    "Ole Miss": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Mississippi": 1
+        }
+    },
+    "UC-Irvine": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "13": 1
+        },
+        "team": {
+            "UC-Irvine": 1
+        }
+    },
+    "UC Irvine": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "13": 1
+        },
+        "team": {
+            "UC-Irvine": 1
+        }
+    },
+    "Old Dominion": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "14": 1
+        },
+        "team": {
+            "Old Dominion": 1
+        }
+    },
+    "Colgate": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "15": 1
+        },
+        "team": {
+            "Colgate": 1
+        }
+    },
+    "Gardner-Webb": {
+        "region": {
+            "South": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "Gardner-Webb": 1
+        }
+    },
+    "Gonzaga": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "1": 1
+        },
+        "team": {
+            "Gonzaga": 1
+        }
+    },
+    "Michigan": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "2": 1
+        },
+        "team": {
+            "Michigan": 1
+        }
+    },
+    "Texas Tech": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "3": 1
+        },
+        "team": {
+            "Texas Tech": 1
+        }
+    },
+    "Florida State": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "4": 1
+        },
+        "team": {
+            "Florida State": 1
+        }
+    },
+    "Florida St": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "4": 1
+        },
+        "team": {
+            "Florida State": 1
+        }
+    },
+    "Nevada": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "7": 1
+        },
+        "team": {
+            "Nevada": 1
+        }
+    },
+    "Buffalo": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "6": 1
+        },
+        "team": {
+            "Buffalo": 1
+        }
+    },
+    "Marquette": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "5": 1
+        },
+        "team": {
+            "Marquette": 1
+        }
+    },
+    "Syracuse": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Syracuse": 1
+        }
+    },
+    "Florida": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "10": 1
+        },
+        "team": {
+            "Florida": 1
+        }
+    },
+    "Murray State": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "12": 1
+        },
+        "team": {
+            "Murray State": 1
+        }
+    },
+    "Arizona State": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Arizona State": 1
+        }
+    },
+    "St. John's (NY)": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "St. John's (NY)": 1
+        }
+    },
+    "Baylor": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "9": 1
+        },
+        "team": {
+            "Baylor": 1
+        }
+    },
+    "Vermont": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "13": 1
+        },
+        "team": {
+            "Vermont": 1
+        }
+    },
+    "Northern Kentucky": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "14": 1
+        },
+        "team": {
+            "Northern Kentucky": 1
+        }
+    },
+    "N Kentucky": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "14": 1
+        },
+        "team": {
+            "Northern Kentucky": 1
+        }
+    },
+    "Montana": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "15": 1
+        },
+        "team": {
+            "Montana": 1
+        }
+    },
+    "Prairie View": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "Prairie View": 1
+        }
+    },
+    "Fairleigh Dickinson": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "Fairleigh Dickinson": 1
+        }
+    },
+    "F. Dickinson": {
+        "region": {
+            "West": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "Fairleigh Dickinson": 1
+        }
+    },
+    "North Carolina": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "1": 1
+        },
+        "team": {
+            "North Carolina": 1
+        }
+    },
+    "Kentucky": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "2": 1
+        },
+        "team": {
+            "Kentucky": 1
+        }
+    },
+    "Auburn": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "5": 1
+        },
+        "team": {
+            "Auburn": 1
+        }
+    },
+    "Houston": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "3": 1
+        },
+        "team": {
+            "Houston": 1
+        }
+    },
+    "Kansas": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "4": 1
+        },
+        "team": {
+            "Kansas": 1
+        }
+    },
+    "Iowa State": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "6": 1
+        },
+        "team": {
+            "Iowa State": 1
+        }
+    },
+    "Wofford": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "7": 1
+        },
+        "team": {
+            "Wofford": 1
+        }
+    },
+    "Ohio State": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "11": 1
+        },
+        "team": {
+            "Ohio State": 1
+        }
+    },
+    "Seton Hall": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "10": 1
+        },
+        "team": {
+            "Seton Hall": 1
+        }
+    },
+    "Utah State": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "8": 1
+        },
+        "team": {
+            "Utah State": 1
+        }
+    },
+    "Washington": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "9": 1
+        },
+        "team": {
+            "Washington": 1
+        }
+    },
+    "New Mexico State": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "12": 1
+        },
+        "team": {
+            "New Mexico State": 1
+        }
+    },
+    "New Mexico St": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "12": 1
+        },
+        "team": {
+            "New Mexico State": 1
+        }
+    },
+    "Northeastern": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "13": 1
+        },
+        "team": {
+            "Northeastern": 1
+        }
+    },
+    "Georgia State": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "14": 1
+        },
+        "team": {
+            "Georgia State": 1
+        }
+    },
+    "Abilene Christian": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "15": 1
+        },
+        "team": {
+            "Abilene Christian": 1
+        }
+    },
+    "Abil Christian": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "15": 1
+        },
+        "team": {
+            "Abilene Christian": 1
+        }
+    },
+    "Iona": {
+        "region": {
+            "Midwest": 1
+        },
+        "seed": {
+            "16": 1
+        },
+        "team": {
+            "Iona": 1
+        }
+    }
+}

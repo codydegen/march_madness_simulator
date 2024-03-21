@@ -20,6 +20,10 @@ import random
 # Final four pairings
 final_four_pairings = {
   "mens" : {
+    2024 : 
+      [['East', 'West'],
+      ['South', 'Midwest']]
+    ,
     2021 : 
       [['West', 'East'],
       ['South', 'Midwest']]
@@ -190,11 +194,10 @@ class Model:
     pass
 
   def raw_print(self):
-    for region in self.all_teams:
-      for seed in self.all_teams[region]:
+    for region in sorted(self.all_teams.keys()):
+      for seed in sorted(self.all_teams[region].keys(), key=lambda x: int(x)):
         for team in self.all_teams[region][seed]:
-          # print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff))
-          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff)+", "+str(team.wins))
+          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff)+", "+str(", ".join(str(value) for value in team.wins.values())))
 
 
 
@@ -1379,20 +1382,21 @@ class Simulation_results:
       if len(self.model.simulations_won_by_imported_entries) != len(self.model.entries["imported_entries"]):
         for j in range(0,len(self.model.entries["imported_entries"])):
           self.model.simulations_won_by_imported_entries.append(0)
-      for i in winning_index:
-        self.model.simulations_won_by_imported_entries[i] += 1
+      # for i in winning_index:
+          print(team.name+", "+team.region+", "+team.seed+", "+str(team.total_expected_points)+", "+str(team.total_picked_expected_points)+", "+str(team.total_points_diff)+", "+str(team.wins))
+      #   self.model.simulations_won_by_imported_entries[i] += 1
 
 
 def main():
   print("test")
-  model = Model(number_simulations=10000, scoring_sys="pick_six", gender="mens", year=2021)
+  model = Model(number_simulations=10000, scoring_sys="degen_bracket", gender="mens", year=2024)
   model.batch_simulate()
   model.create_json_files()
   model.update_entry_picks()
   model.initialize_special_entries()
   model.analyze_special_entries()
   # model.add_fake_entries()
-  model.add_bulk_entries_from_database(2)
+  # model.add_bulk_entries_from_database(2)
   model.add_simulation_results_postprocessing()
   model.output_results()
 

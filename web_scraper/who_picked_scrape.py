@@ -9,6 +9,7 @@ import re
 
 espn_data = {
   "mens" : {
+    2024 : "https://fantasy.espn.com/tournament-challenge-bracket/2024/en/whopickedwhom",
     2021 : "https://fantasy.espn.com/tournament-challenge-bracket/2021/en/whopickedwhom",
     2019 : "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/whopickedwhom",
     2018 : "https://web.archive.org/web/20190307213746/http://fantasy.espn.com/tournament-challenge-bracket/2018/en/whopickedwhom"

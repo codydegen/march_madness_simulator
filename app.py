@@ -27,7 +27,7 @@ fake_entries = 50
 number_entries = real_entries + fake_entries
 year = 2021
 gender = "mens"
-# Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket"
+# Scoring systems currently implemented are "ESPN", "wins_only", "degen_bracket", "pick_six"
 scoring_system = "ESPN"
 
 external_stylesheets = ['../assets/styles.css']

@@ -6,10 +6,10 @@ PROXY = "52.179.231.206:80"
 
 cody_2021 = {
   "groupname": "Cody's Bracket",
-  "savepath": "cody_2021",
+  "savepath": "cody_2024",
   "webaddress": "https://fantasy.espn.com/tournament-challenge-bracket/2021/en/group?groupID=4144911",
   "groupsize": "1+",
-  "year": 2021,
+  "year": 2024,
   "prefix" : "cd",
   "gender" : "mens"
 }
@@ -19,7 +19,7 @@ tournamentChallenge_2019 = {
   "savepath": "Tournament_challenge_2019",
   "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=196060",
   "groupsize": "100,000+",
-  "year": 2019,
+  "year": 2024,
   "prefix" : "tc",
   "gender" : "mens"
 }
@@ -29,7 +29,7 @@ sportsCenter_2019 = {
   "savepath": "ESPN_sportscenter_2019",
   "webaddress": "http://fantasy.espn.com/tournament-challenge-bracket/2019/en/group?groupID=1041234",
   "groupsize": "1,000,000+",
-  "year": 2019,
+  "year": 2024,
   "prefix" : "sc",
   "gender" : "mens"
 }
